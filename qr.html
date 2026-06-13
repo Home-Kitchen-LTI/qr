@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Makeup - Aesthetic QR Code Generator & Decorator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- QRCode Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <!-- jsQR Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    
+    <!-- Firebase Legacy Compat SDKs (Stabil untuk aplikasi HTML tunggal) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: linear-gradient(125deg, #0f172a 0%, #1e1b4b 30%, #312e81 60%, #0f172a 100%);
+            background-size: 400% 400%;
+            animation: aurora-bg 15s ease infinite;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.15), transparent 50%),
+                        radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.15), transparent 40%),
+                        radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.1), transparent 40%);
+            z-index: -1;
+            filter: blur(80px);
+            animation: aurora-move 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes aurora-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes aurora-move {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.1) translate(2%, 5%); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="text-slate-100 p-3 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- HEADER -->
+        <header class="flex flex-col md:flex-row items-center justify-between mb-8 pb-6 border-b border-slate-800 gap-4">
+            <button onclick="openAuthModal()" class="flex items-center gap-3 hover:opacity-90 transition text-left group">
+                <div class="bg-gradient-to-tr from-pink-500 to-violet-600 p-2.5 rounded-2xl shadow-lg shadow-pink-500/20 group-hover:scale-105 transition duration-300">
+                    <i data-lucide="sparkles" class="w-8 h-8 text-white animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-pink-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
+                        QR Makeup
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-400 flex items-center gap-1.5">
+                        <span>Seni Rekaan QR Code Estetik</span> 
+                        <span class="text-pink-400 font-bold">• Profil / Akses Admin</span>
+                    </p>
+                </div>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <div id="user-badge" class="hidden items-center gap-2 bg-slate-800/80 backdrop-blur px-4 py-2 rounded-full border border-slate-700/50 text-xs">
+                    <span id="user-badge-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span id="user-badge-email" class="text-slate-300 truncate max-w-[150px]">Guest</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-800/80 backdrop-blur px-4 py-2 rounded-full border border-slate-700/50 text-xs text-slate-300">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>Mod Automatik Aktif</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TOAST BANNER -->
+        <div id="toast-banner" class="hidden fixed bottom-5 right-5 z-50 flex items-center gap-3 glass-panel text-slate-100 px-5 py-4 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-10">
+            <div id="toast-icon" class="p-2 rounded-lg bg-pink-500/20 text-pink-400">
+                <i data-lucide="info" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h4 id="toast-title" class="font-bold text-sm">Notifikasi</h4>
+                <p id="toast-message" class="text-xs text-slate-400">Mesej sistem.</p>
+            </div>
+            <button onclick="hideToast()" class="text-slate-400 hover:text-slate-200 ml-4">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- FIREBASE AUTH & ADMIN MODAL -->
+        <div id="auth-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+            <div class="glass-panel w-full max-w-lg rounded-3xl p-6 relative overflow-hidden">
+                <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+
+                <!-- STATUS 1: BELUM LOG IN -->
+                <div id="auth-logged-out-section" class="space-y-4">
+                    <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-400 flex items-center gap-2">
+                        <i data-lucide="lock" class="w-5 h-5 text-pink-400"></i>
+                        <span>Log Masuk / Daftar Akaun</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Log masuk untuk menyimpan rekaan secara automatik ke cloud dan akses fungsi admin.</p>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Alamat E-mel</label>
+                            <input type="email" id="auth-email" placeholder="contoh@qrmakeup.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-pink-500 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Kata Laluan</label>
+                            <input type="password" id="auth-password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-pink-500 text-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <button onclick="handleEmailLogin()" class="bg-gradient-to-r from-pink-500 to-violet-600 hover:opacity-95 text-white text-sm font-bold py-3 rounded-xl transition">
+                            Log Masuk
+                        </button>
+                        <button onclick="handleEmailSignUp()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold py-3 rounded-xl transition">
+                            Daftar Akaun
+                        </button>
+                    </div>
+                    <div class="text-[11px] text-center text-slate-500">
+                        *Tip: E-mel yang mengandungi perkataan "admin" (cth: <span class="text-slate-400 font-mono">admin@qrmakeup.com</span>) akan mendapat akses Admin!
+                    </div>
+                </div>
+
+                <!-- STATUS 2: SUDAH LOG IN -->
+                <div id="auth-logged-in-section" class="hidden space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                                <i data-lucide="user-check" class="text-emerald-400 w-5 h-5"></i>
+                                <span>Profil Pengguna</span>
+                            </h3>
+                            <p id="profile-email-display" class="text-xs text-slate-400 font-mono mt-1">user@example.com</p>
+                        </div>
+                        <button onclick="handleLogout()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-semibold flex items-center gap-1 transition">
+                            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Log Keluar
+                        </button>
+                    </div>
+
+                    <!-- ADMIN ACCESS DASHBOARD -->
+                    <div id="admin-dashboard" class="hidden space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                                <i data-lucide="shield-alert" class="w-4 h-4"></i> Pemantauan Pangkalan Data Admin
+                            </h4>
+                            <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">Admin Sahaja</span>
+                        </div>
+
+                        <!-- Firestore Database List -->
+                        <div id="admin-data-list" class="max-h-[250px] overflow-y-auto space-y-2.5 pr-1">
+                            <p class="text-xs text-slate-500 text-center py-6">Tiada rekod dimuat naik.</p>
+                        </div>
+                    </div>
+
+                    <!-- NORMAL USER BACKUP INFO -->
+                    <div id="user-backup-info" class="bg-indigo-950/40 border border-indigo-500/20 rounded-2xl p-4 text-xs text-slate-300 space-y-2">
+                        <h4 class="font-bold flex items-center gap-1 text-pink-400">
+                            <i data-lucide="cloud-lightning" class="w-3.5 h-3.5"></i> Backup Cloud Automatik Aktif
+                        </h4>
+                        <p class="leading-relaxed">Setiap QR Code yang anda jana akan disimpan secara automatik di bawah akaun anda. Hanya pihak Admin sahaja yang boleh melihat rekaan persekitaran yang dikongsi.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN LAYOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- LEFT PANEL -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- STEP 1: DATA SOURCE -->
+                <section class="glass-panel rounded-3xl p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="bg-pink-500/10 text-pink-400 px-2.5 py-1 rounded-lg text-xs font-bold">Step 1</span>
+                        <h2 class="text-lg font-bold">QR Code Data Source</h2>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button id="btn-mode-upload" onclick="switchInputMode('upload')" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-pink-500/30 bg-pink-500/10 text-white font-medium text-sm transition">
+                            <i data-lucide="upload-cloud" class="w-4 h-4"></i> Upload Original QR
+                        </button>
+                        <button id="btn-mode-text" onclick="switchInputMode('text')" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 font-medium text-sm transition">
+                            <i data-lucide="link" class="w-4 h-4"></i> New Text / URL
+                        </button>
+                    </div>
+
+                    <div id="container-upload" class="space-y-4">
+                        <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-pink-500/50 bg-slate-950/40 transition rounded-2xl p-6 cursor-pointer group text-center">
+                            <input type="file" id="qr-file-input" accept="image/*" class="hidden" onchange="handleQRUpload(event)">
+                            <div class="bg-slate-800 group-hover:bg-pink-500/10 p-4 rounded-full transition mb-3">
+                                <i data-lucide="qr-code" class="w-8 h-8 text-slate-400 group-hover:text-pink-400 transition"></i>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-300">Choose QR Code image to Decorate</span>
+                        </label>
+                        <div id="decoded-info" class="hidden bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-400 flex items-center gap-2.5">
+                            <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
+                            <span id="decoded-text-preview" class="font-mono truncate">Waiting...</span>
+                        </div>
+                    </div>
+
+                    <div id="container-text" class="hidden space-y-3">
+                        <input type="text" id="qr-text-input" oninput="regenerateStyledQR()" placeholder="Enter URL or text" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl py-3 px-4 text-sm text-white outline-none" value="https://google.com">
+                    </div>
+                </section>
+
+                <!-- STEP 2: PRESETS -->
+                <section class="glass-panel rounded-3xl p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="bg-pink-500/10 text-pink-400 px-2.5 py-1 rounded-lg text-xs font-bold">Step 2</span>
+                        <h2 class="text-lg font-bold">Makeup Presets</h2>
+                    </div>
+                    <div class="grid grid-cols-3 md:grid-cols-5 gap-3" id="theme-selectors-grid"></div>
+                </section>
+
+                <!-- STEP 3: CUSTOMIZATION -->
+                <section class="glass-panel rounded-3xl p-6 space-y-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-pink-500/10 text-pink-400 px-2.5 py-1 rounded-lg text-xs font-bold">Step 3</span>
+                        <h2 class="text-lg font-bold">Environment & Details</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Bottom Label Tag -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Bottom Label Tag (Real-time)</label>
+                            <input type="text" id="qr-label-tag" oninput="regenerateStyledQR()" placeholder="e.g. SCAN ME / FOLLOW US" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-pink-500 transition">
+                        </div>
+
+                        <!-- Custom Background Upload -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Environment Background (Custom Image)</label>
+                            <div class="flex items-center gap-4">
+                                <label class="flex-1 flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-3 rounded-xl cursor-pointer text-sm text-slate-300 transition hover:bg-slate-900">
+                                    <i data-lucide="image-plus" class="w-4 h-4 text-emerald-400"></i>
+                                    <span id="bg-upload-name">Upload Custom Image</span>
+                                    <input type="file" id="bg-file-input" accept="image/*" class="hidden" onchange="handleBgUpload(event)">
+                                </label>
+                                <button id="btn-remove-bg" onclick="removeCustomBg()" class="hidden p-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Ornaments Selection -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Background Ornament</label>
+                            <select id="style-ornament" onchange="regenerateStyledQR()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none">
+                                <option value="particles" selected>Soft Particles</option>
+                                <option value="stars">Shiny Sparkles</option>
+                                <option value="leaves">Eco Leaves</option>
+                                <option value="waves">Modern Waves</option>
+                                <option value="snowflakes">Winter Snowflakes</option>
+                                <option value="hearts">Sweet Hearts</option>
+                                <option value="hexagons">Tech Hexagons</option>
+                                <option value="triangles">Geo Triangles</option>
+                                <option value="plus">Plus Grid</option>
+                                <option value="dots">Dots Grid</option>
+                                <option value="bubbles">Floating Bubbles</option>
+                                <option value="confetti">Festive Confetti</option>
+                                <option value="diamonds">Luxe Diamonds</option>
+                                <option value="rings">Etheric Rings</option>
+                                <option value="none">Plain (Gradient Only)</option>
+                            </select>
+                        </div>
+
+                        <!-- Dots Style -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">QR Dots Style</label>
+                            <select id="style-dots" onchange="regenerateStyledQR()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none">
+                                <option value="square">Square</option>
+                                <option value="circle" selected>Circle</option>
+                                <option value="rounded-rect">Capsule</option>
+                                <option value="diamond">Diamond</option>
+                            </select>
+                        </div>
+
+                        <!-- Gradient Colors -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">QR Gradient Color</label>
+                            <div class="flex gap-2">
+                                <input type="color" id="color-fg-start" oninput="regenerateStyledQR()" value="#ec4899" class="w-12 h-10 rounded border-0 bg-transparent cursor-pointer">
+                                <input type="color" id="color-fg-end" oninput="regenerateStyledQR()" value="#8b5cf6" class="w-12 h-10 rounded border-0 bg-transparent cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- Eye Style -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Eye Style</label>
+                            <select id="style-eye" onchange="regenerateStyledQR()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none">
+                                <option value="square">Square</option>
+                                <option value="rounded" selected>Rounded</option>
+                                <option value="circle">Circle</option>
+                            </select>
+                        </div>
+
+                        <!-- Logo Upload -->
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Center Logo</label>
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-3 rounded-xl cursor-pointer text-sm text-slate-300">
+                                    <i data-lucide="image" class="w-4 h-4 text-pink-400"></i>
+                                    <span>Pick Logo</span>
+                                    <input type="file" id="logo-file-input" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+                                </label>
+                                <div id="logo-preview-container" class="hidden flex items-center gap-2">
+                                    <img id="logo-preview" class="w-8 h-8 rounded-lg object-contain bg-slate-900 border">
+                                    <button onclick="removeLogo()" class="text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- RIGHT PANEL -->
+            <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-8">
+                <div class="glass-panel rounded-3xl p-6 flex flex-col items-center">
+                    <div class="w-full flex justify-between mb-4 border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-sm tracking-wide text-slate-300 uppercase">Aesthetic Preview</h3>
+                        <span class="text-xs text-slate-400" id="current-theme-badge">Theme: Sweet Blush</span>
+                    </div>
+
+                    <div class="relative w-full aspect-square max-w-[360px] bg-slate-950 rounded-2xl p-3 overflow-hidden border border-slate-800">
+                        <canvas id="qr-display-canvas" width="800" height="800" class="w-full h-full rounded-xl transition-all duration-300"></canvas>
+                        <div id="canvas-loader" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 opacity-0 pointer-events-none transition">
+                            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-pink-500"></div>
+                        </div>
+                    </div>
+
+                    <!-- Scanner Readability Feature -->
+                    <div class="w-full max-w-[360px] mt-4 p-3.5 bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
+                        <div class="flex justify-between font-semibold">
+                            <span>Scanner Readability:</span>
+                            <span class="text-emerald-400 font-bold" id="safety-score">99% (Very Safe)</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="safety-bar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-300" style="width: 99%"></div>
+                        </div>
+                        <span class="block text-[10px] text-slate-500 pt-1 leading-relaxed">
+                            Tip: Keep high contrast between QR dots and background for easier scanning.
+                        </span>
+                    </div>
+
+                    <div class="w-full mt-5 grid grid-cols-2 gap-3">
+                        <button onclick="downloadQR('png')" class="flex items-center justify-center gap-2 bg-slate-800 text-white font-semibold py-3 rounded-xl transition text-sm">
+                            <i data-lucide="download" class="w-4 h-4"></i> PNG
+                        </button>
+                        <button onclick="downloadQR('jpg')" class="flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-violet-600 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm">
+                            <i data-lucide="share-2" class="w-4 h-4"></i> JPG
+                        </button>
+                    </div>
+                </div>
+
+                <!-- How to Use Card -->
+                <div class="glass-panel rounded-3xl p-6 text-xs text-slate-400 leading-relaxed">
+                    <h4 class="font-bold text-slate-300 mb-2 flex items-center gap-1.5">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i> How to Use
+                    </h4>
+                    <ol class="list-decimal pl-4 space-y-1.5">
+                        <li>Upload your original QR Code image OR select "New Text / URL" to create one from scratch.</li>
+                        <li>Our system will extract data if an image is uploaded.</li>
+                        <li>Choose a makeup preset to change the environment instantly.</li>
+                        <li>Customize colors, dots, and add a logo as needed.</li>
+                        <li>Use PNG or JPG buttons to download your customized, aesthetic QR Code.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE LOGIC & FIREBASE SDK SYSTEM -->
+    <script>
+        // Nyatakan elemen HTML & state global terlebih dahulu
+        const canvas = document.getElementById('qr-display-canvas');
+        const ctx = canvas.getContext('2d');
+        const loader = document.getElementById('canvas-loader');
+        const styleDots = document.getElementById('style-dots');
+        const styleEye = document.getElementById('style-eye');
+        const styleOrnament = document.getElementById('style-ornament');
+        const colorFgStart = document.getElementById('color-fg-start');
+        const colorFgEnd = document.getElementById('color-fg-end');
+        const qrLabelTag = document.getElementById('qr-label-tag');
+
+        let inputMode = 'upload'; 
+        let decodedQRData = 'https://google.com'; 
+        let centerLogoImg = null;
+        let customBgImg = null;
+        let saveDebounceTimeout = null;
+
+        const themes = {
+            'sweet-blush': { name: 'Sweet Blush', dotsStyle: 'circle', eyeStyle: 'rounded', colorFgStart: '#ec4899', colorFgEnd: '#8b5cf6', cls: 'from-rose-400 to-pink-500', orn: 'particles', bg: ['#ffe4e6', '#f3e8ff'] },
+            'gold-luxe': { name: 'Gold Luxe', dotsStyle: 'rounded-rect', eyeStyle: 'rounded', colorFgStart: '#b45309', colorFgEnd: '#ca8a04', cls: 'from-amber-300 to-amber-700', orn: 'stars', bg: ['#0f172a', '#1e293b'] },
+            'cyber-neon': { name: 'Cyber Neon', dotsStyle: 'square', eyeStyle: 'square', colorFgStart: '#06b6d4', colorFgEnd: '#ec4899', cls: 'from-cyan-400 to-indigo-600', orn: 'waves', bg: ['#030712', '#0f172a'] },
+            'eco-leaf': { name: 'Eco Leaf', dotsStyle: 'circle', eyeStyle: 'circle', colorFgStart: '#10b981', colorFgEnd: '#064e3b', cls: 'from-emerald-400 to-teal-800', orn: 'leaves', bg: ['#f0fdf4', '#dcfce7'] },
+            'midnight': { name: 'Midnight', dotsStyle: 'square', eyeStyle: 'square', colorFgStart: '#ffffff', colorFgEnd: '#4b5563', cls: 'from-gray-700 to-black', orn: 'plus', bg: ['#000000', '#111827'] }
+        };
+
+        // --- PEMBANTU ANALISIS KONTRAST SCANNER (DIDEFINISIKAN SEBELUM DIHOIST) ---
+        function getLuma(hex) {
+            const c = hex.substring(1);
+            const rgb = parseInt(c, 16);
+            const r = (rgb >> 16) & 0xff;
+            const g = (rgb >>  8) & 0xff;
+            const b = (rgb >>  0) & 0xff;
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+
+        function isDarkColor(hex) {
+            return getLuma(hex) < 120;
+        }
+
+        function calculateSafety() {
+            let score = 99;
+            let label = "99% (Very Safe)";
+            let colorClass = "text-emerald-400";
+            let barGradient = "from-emerald-500 to-teal-400";
+
+            if (customBgImg) {
+                score = 85;
+                label = "85% (Safe)";
+                colorClass = "text-emerald-400";
+                barGradient = "from-amber-400 to-emerald-400";
+            } else {
+                const fgLuma = getLuma(colorFgStart.value);
+                if (fgLuma < 55) {
+                    score = 35;
+                    label = "35% (Scanning Risk)";
+                    colorClass = "text-red-400";
+                    barGradient = "from-red-500 to-orange-500";
+                } else if (fgLuma < 120) {
+                    score = 75;
+                    label = "75% (Medium Contrast)";
+                    colorClass = "text-amber-400";
+                    barGradient = "from-orange-500 to-amber-500";
+                }
+            }
+
+            if (styleDots.value === 'diamond' && score > 50) {
+                score -= 10;
+                label = `${score}% (Safe)`;
+                colorClass = "text-amber-400";
+                barGradient = "from-orange-500 to-amber-400";
+            }
+            if (centerLogoImg && score > 50) {
+                score -= 5;
+                label = `${score}% (Safe)`;
+            }
+
+            const scoreDisplay = document.getElementById('safety-score');
+            const scoreBar = document.getElementById('safety-bar');
+            
+            if (scoreDisplay) {
+                scoreDisplay.innerText = label;
+                scoreDisplay.className = `font-bold ${colorClass}`;
+            }
+            if (scoreBar) {
+                scoreBar.style.width = `${score}%`;
+                scoreBar.className = `h-full bg-gradient-to-r ${barGradient} rounded-full transition-all duration-300`;
+            }
+        }
+
+        // --- FIREBASE MANDATORY ENGINE & INTEGRASI AKTIF ---
+        let app, auth, db;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let currentUser = null;
+        let isAdmin = false;
+
+        async function initFirebaseSystem() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBu8NOziGpCBhQEYFLOIkNLl0YqXYNFmSs",
+                    authDomain: "qrmakeup-c298b.firebaseapp.com",
+                    projectId: "qrmakeup-c298b",
+                    storageBucket: "qrmakeup-c298b.firebasestorage.app",
+                    messagingSenderId: "550156184090",
+                    appId: "1:550156184090:web:9b80a4599c36f90e45bfa3",
+                    measurementId: "G-RMH6N9NXPD"
+                };
+
+                app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+
+                // Dengar perubahan status log masuk secara terus (Instant UI Sync)
+                auth.onAuthStateChanged((user) => {
+                    currentUser = user;
+                    updateUserBadgeUI();
+                    
+                    if (user && !user.isAnonymous) {
+                        isAdmin = user.email && user.email.toLowerCase().includes('admin');
+                        
+                        const badgeDot = document.getElementById('user-badge-dot');
+                        if (isAdmin) {
+                            badgeDot.className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
+                            document.getElementById('admin-dashboard').classList.remove('hidden');
+                            document.getElementById('user-backup-info').classList.add('hidden');
+                            setupAdminListener();
+                        } else {
+                            badgeDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                            document.getElementById('admin-dashboard').classList.add('hidden');
+                            document.getElementById('user-backup-info').classList.remove('hidden');
+                        }
+                    } else {
+                        isAdmin = false;
+                        document.getElementById('admin-dashboard').classList.add('hidden');
+                        document.getElementById('user-backup-info').classList.remove('hidden');
+                    }
+                    
+                    // Instant render output selepas status bertukar
+                    regenerateStyledQR();
+                });
+
+                // Sambung secara automatik (Anonymous) jika tiada sesi aktif
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await auth.signInWithCustomToken(__initial_auth_token);
+                    } else {
+                        // Elakkan ralat jika operasi Anonymous disekat pada console Firebase pengguna
+                        await auth.signInAnonymously();
+                    }
+                } catch (anonError) {
+                    console.warn("Sesi automasi disekat oleh konsol Firebase. Sila log masuk secara manual.");
+                }
+
+            } catch (error) {
+                console.error("Gagal memulakan Firebase:", error);
+            }
+        }
+
+        // Memantau penguploadan data global (Admin Listener)
+        let adminUnsubscribe = null;
+        function setupAdminListener() {
+            if (adminUnsubscribe) adminUnsubscribe();
+            if (!currentUser || !isAdmin) return;
+
+            const collectionRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('generations');
+            
+            adminUnsubscribe = collectionRef.onSnapshot((snapshot) => {
+                const listContainer = document.getElementById('admin-data-list');
+                listContainer.innerHTML = '';
+
+                if (snapshot.empty) {
+                    listContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Tiada pangkalan data ditemui.</p>`;
+                    return;
+                }
+
+                const sortedDocs = [];
+                snapshot.forEach(doc => {
+                    sortedDocs.push({ id: doc.id, ...doc.data() });
+                });
+                sortedDocs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                sortedDocs.forEach(item => {
+                    const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Masa Tidak Diketahui';
+                    const recordEl = document.createElement('div');
+                    recordEl.className = "bg-slate-950/90 border border-slate-800/80 rounded-xl p-3 flex flex-col gap-2 relative group hover:border-pink-500/30 transition";
+                    recordEl.innerHTML = `
+                        <div class="flex items-center justify-between border-b border-slate-850 pb-2">
+                            <span class="text-[10px] font-mono text-pink-400 truncate max-w-[150px]">${item.userEmail || 'Anonymous'}</span>
+                            <span class="text-[9px] text-slate-500">${dateStr}</span>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <img src="${item.preview || 'https://via.placeholder.com/80?text=QR'}" class="w-12 h-12 rounded bg-white object-contain flex-shrink-0" alt="Preview" />
+                            <div class="text-[11px] truncate flex-1">
+                                <p class="text-slate-300 font-bold truncate">Data: ${item.qrData}</p>
+                                <p class="text-slate-400 mt-0.5">Label: ${item.labelTag || 'Tiada'}</p>
+                                <p class="text-[10px] text-indigo-400">Tema: ${item.themeName || 'Kustom'}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-1">
+                            <button onclick="restoreRecordToEditor('${item.qrData}', '${item.themeName}', '${item.labelTag}')" class="flex-1 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 text-[10px] rounded font-bold transition">
+                                Muat ke Editor
+                            </button>
+                            <button onclick="deleteFirestoreRecord('${item.id}')" class="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition" title="Padam Rekod">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5 mx-auto"></i>
+                            </button>
+                        </div>
+                    `;
+                    listContainer.appendChild(recordEl);
+                });
+                lucide.createIcons();
+            }, (error) => {
+                console.error("Admin snapshot error: ", error);
+            });
+        }
+
+        function restoreRecordToEditor(qrData, themeName, labelTag) {
+            decodedQRData = qrData;
+            if (inputMode === 'text') {
+                document.getElementById('qr-text-input').value = qrData;
+            }
+            qrLabelTag.value = labelTag || '';
+            
+            const matchingKey = Object.keys(themes).find(k => themes[k].name === themeName);
+            if (matchingKey) {
+                applyTheme(matchingKey);
+            } else {
+                regenerateStyledQR();
+            }
+            closeAuthModal();
+            showToast("Rekod Dipulihkan", "Konfigurasi rekaan berjaya dimuatkan ke editor!");
+        }
+
+        async function deleteFirestoreRecord(docId) {
+            if (!currentUser || !isAdmin) return;
+            try {
+                await db.collection('artifacts').doc(appId)
+                        .collection('public').doc('data')
+                        .collection('generations').doc(docId).delete();
+                showToast("Rekod Dipadam", "Berjaya membuang fail dari pangkalan data awan!");
+            } catch (e) {
+                showToast("Gagal Padam", e.message);
+            }
+        }
+
+        // Auto-Save Rekaan ke Firestore
+        function triggerAutoSaveToFirestore() {
+            if (saveDebounceTimeout) clearTimeout(saveDebounceTimeout);
+            
+            saveDebounceTimeout = setTimeout(async () => {
+                if (!currentUser) return;
+
+                try {
+                    const tempPreview = canvas.toDataURL('image/jpeg', 0.4);
+
+                    const payload = {
+                        userId: currentUser.uid,
+                        userEmail: currentUser.email || 'Anonymous/Guest',
+                        qrData: inputMode === 'text' ? (document.getElementById('qr-text-input').value || 'https://google.com') : decodedQRData,
+                        themeName: document.getElementById('current-theme-badge').innerText.replace('Theme: ', ''),
+                        labelTag: qrLabelTag.value.trim(),
+                        dotsStyle: styleDots.value,
+                        eyeStyle: styleEye.value,
+                        ornament: styleOrnament.value,
+                        colorFgStart: colorFgStart.value,
+                        colorFgEnd: colorFgEnd.value,
+                        preview: tempPreview,
+                        timestamp: Date.now()
+                    };
+
+                    await db.collection('artifacts').doc(appId)
+                            .collection('public').doc('data')
+                            .collection('generations')
+                            .doc(currentUser.uid).set(payload, { merge: true });
+
+                    console.log("Konfigurasi disimpan secara automatik ke cloud.");
+                } catch (e) {
+                    console.warn("Firestore auto-save skipped: ", e);
+                }
+            }, 1500);
+        }
+
+        // --- AUTHENTICATION FLOW (INSTANT RE-RENDER) ---
+        function openAuthModal() {
+            document.getElementById('auth-modal').classList.remove('hidden');
+            if (currentUser && !currentUser.isAnonymous) {
+                document.getElementById('auth-logged-out-section').classList.add('hidden');
+                document.getElementById('auth-logged-in-section').classList.remove('hidden');
+                document.getElementById('profile-email-display').innerText = currentUser.email;
+            } else {
+                document.getElementById('auth-logged-out-section').classList.remove('hidden');
+                document.getElementById('auth-logged-in-section').classList.add('hidden');
+            }
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        async function handleEmailSignUp() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            if (!email || !password) {
+                showToast("Isi Maklumat", "Sila masukkan E-mel dan Kata Laluan.");
+                return;
+            }
+
+            try {
+                const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                currentUser = userCred.user;
+                showToast("Akaun Dicipta", "Selamat datang ke QR Makeup!", "success");
+                closeAuthModal();
+                regenerateStyledQR(); // Instant rendering selepas mendaftar
+            } catch (error) {
+                showToast("Ralat Pendaftaran", error.message);
+            }
+        }
+
+        async function handleEmailLogin() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            if (!email || !password) {
+                showToast("Isi Maklumat", "Sila masukkan E-mel dan Kata Laluan.");
+                return;
+            }
+
+            try {
+                const userCred = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCred.user;
+                showToast("Log Masuk Berjaya", "Selamat kembali!", "success");
+                closeAuthModal();
+                regenerateStyledQR(); // Instant rendering selepas log masuk
+            } catch (error) {
+                showToast("Ralat Log Masuk", error.message);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await auth.signOut();
+                currentUser = null;
+                isAdmin = false;
+                
+                try {
+                    await auth.signInAnonymously();
+                } catch(e) {}
+                
+                showToast("Log Keluar", "Kembali ke mod tetamu.");
+                closeAuthModal();
+                regenerateStyledQR(); // Instant rendering selepas log keluar
+            } catch (error) {
+                showToast("Ralat Log Keluar", error.message);
+            }
+        }
+
+        function updateUserBadgeUI() {
+            const badge = document.getElementById('user-badge');
+            const emailText = document.getElementById('user-badge-email');
+            
+            if (currentUser && !currentUser.isAnonymous) {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+                emailText.innerText = currentUser.email;
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
+        }
+
+        // --- CORE APPLICATION LOGIC ---
+        function switchInputMode(mode) {
+            inputMode = mode;
+            document.getElementById('btn-mode-upload').className = mode === 'upload' ? "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-pink-500/30 bg-pink-500/10 text-white text-sm" : "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 text-sm";
+            document.getElementById('btn-mode-text').className = mode === 'text' ? "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-pink-500/30 bg-pink-500/10 text-white text-sm" : "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 text-sm";
+            document.getElementById('container-upload').classList.toggle('hidden', mode !== 'upload');
+            document.getElementById('container-text').classList.toggle('hidden', mode !== 'text');
+            regenerateStyledQR();
+        }
+
+        function handleQRUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const temp = document.createElement('canvas');
+                    const tCtx = temp.getContext('2d');
+                    temp.width = img.width; temp.height = img.height;
+                    tCtx.drawImage(img, 0, 0);
+                    const code = jsQR(tCtx.getImageData(0,0,img.width,img.height).data, img.width, img.height);
+                    if (code) {
+                        decodedQRData = code.data;
+                        document.getElementById('decoded-info').classList.remove('hidden');
+                        document.getElementById('decoded-text-preview').innerText = code.data;
+                        regenerateStyledQR();
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                centerLogoImg = new Image();
+                centerLogoImg.onload = () => {
+                    document.getElementById('logo-preview-container').classList.remove('hidden');
+                    document.getElementById('logo-preview').src = e.target.result;
+                    regenerateStyledQR();
+                };
+                centerLogoImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleBgUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('bg-upload-name').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                customBgImg = new Image();
+                customBgImg.onload = () => {
+                    document.getElementById('btn-remove-bg').classList.remove('hidden');
+                    regenerateStyledQR();
+                };
+                customBgImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeCustomBg() {
+            customBgImg = null;
+            document.getElementById('bg-file-input').value = '';
+            document.getElementById('bg-upload-name').innerText = "Upload Custom QR Background";
+            document.getElementById('btn-remove-bg').classList.add('hidden');
+            regenerateStyledQR();
+        }
+
+        function removeLogo() {
+            centerLogoImg = null;
+            document.getElementById('logo-preview-container').classList.add('hidden');
+            document.getElementById('logo-file-input').value = '';
+            regenerateStyledQR();
+        }
+
+        function applyTheme(key) {
+            const theme = themes[key];
+            styleDots.value = theme.dotsStyle;
+            styleEye.value = theme.eyeStyle;
+            styleOrnament.value = theme.orn;
+            colorFgStart.value = theme.colorFgStart;
+            colorFgEnd.value = theme.colorFgEnd;
+            document.getElementById('current-theme-badge').innerText = `Theme: ${theme.name}`;
+            regenerateStyledQR();
+        }
+
+        function regenerateStyledQR() {
+            loader.style.opacity = '1';
+            
+            const data = inputMode === 'text' ? document.getElementById('qr-text-input').value : decodedQRData;
+            const qr = qrcode(0, 'Q'); qr.addData(data || " "); qr.make();
+            const mCount = qr.getModuleCount();
+            const size = canvas.width;
+            ctx.clearRect(0,0,size,size);
+
+            if (customBgImg) {
+                ctx.drawImage(customBgImg, 0, 0, size, size);
+            } else {
+                const grad = ctx.createLinearGradient(0,0,size,size);
+                grad.addColorStop(0, '#0f172a'); grad.addColorStop(1, '#1e293b');
+                ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
+            }
+
+            drawOrnaments(size);
+
+            const qSize = size * 0.65;
+            const off = (size - qSize) / 2;
+            const cSize = qSize / mCount;
+
+            const fg = ctx.createLinearGradient(off, off, off + qSize, off + qSize);
+            fg.addColorStop(0, colorFgStart.value); fg.addColorStop(1, colorFgEnd.value);
+
+            for (let r = 0; r < mCount; r++) {
+                for (let c = 0; c < mCount; c++) {
+                    if (qr.isDark(r, c)) {
+                        if ((r < 7 && c < 7) || (r < 7 && c >= mCount - 7) || (r >= mCount - 7 && c < 7)) continue;
+                        if (centerLogoImg) {
+                            const mid = Math.floor(mCount / 2);
+                            if (r >= mid - 4 && r <= mid + 4 && c >= mid - 4 && c <= mid + 4) continue;
+                        }
+                        ctx.fillStyle = fg;
+                        const x = off + c * cSize, y = off + r * cSize;
+                        ctx.beginPath();
+                        if (styleDots.value === 'circle') ctx.arc(x+cSize/2, y+cSize/2, cSize*0.4, 0, Math.PI*2);
+                        else if (styleDots.value === 'diamond') { ctx.moveTo(x+cSize/2, y); ctx.lineTo(x+cSize, y+cSize/2); ctx.lineTo(x+cSize/2, y+cSize); ctx.lineTo(x, y+cSize/2); }
+                        else if (styleDots.value === 'rounded-rect') drawRRect(ctx, x+cSize*0.1, y+cSize*0.1, cSize*0.8, cSize*0.8, cSize*0.3);
+                        else ctx.rect(x, y, cSize, cSize);
+                        ctx.fill();
+                    }
+                }
+            }
+            drawEyes(ctx, off, cSize, mCount);
+            
+            // Draw Center Logo
+            if (centerLogoImg) {
+                const lSize = qSize * 0.22;
+                ctx.fillStyle = "#fff"; drawRRect(ctx, (size-lSize)/2-5, (size-lSize)/2-5, lSize+10, lSize+10, 10);
+                ctx.drawImage(centerLogoImg, (size-lSize)/2, (size-lSize)/2, lSize, lSize);
+            }
+
+            // Draw Bottom Tag Label
+            const labelValue = qrLabelTag.value.trim();
+            if (labelValue) {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = 'bold 30px "Plus Jakarta Sans"';
+                ctx.textAlign = "center";
+                ctx.letterSpacing = "2px";
+                ctx.fillText(labelValue.toUpperCase(), size / 2, size - 45);
+            }
+            
+            calculateSafety();
+            
+            // Simpan rekaan ke Firestore secara automatik
+            triggerAutoSaveToFirestore();
+
+            setTimeout(() => { loader.style.opacity = '0'; }, 50);
+        }
+
+        function drawRRect(c, x, y, w, h, r) {
+            c.beginPath(); c.moveTo(x+r, y); c.lineTo(x+w-r, y); c.quadraticCurveTo(x+w, y, x+w, y+r); c.lineTo(x+w, y+h-r); c.quadraticCurveTo(x+w, y+h, x+w-r, y+h); c.lineTo(x+r, y+h); c.quadraticCurveTo(x, y+h, x, y+h-r); c.lineTo(x, y+r); c.quadraticCurveTo(x, y, x+r, y); c.closePath();
+        }
+
+        function drawOrnaments(size) {
+            const orn = styleOrnament.value;
+            if (orn === 'none') return;
+            ctx.save();
+            ctx.fillStyle = "rgba(255,255,255,0.15)";
+            for (let i = 0; i < 40; i++) {
+                const x = Math.random()*size, y = Math.random()*size;
+                const s = Math.random()*15+5;
+                ctx.beginPath();
+                if (orn === 'particles') ctx.arc(x,y,s/2,0,Math.PI*2);
+                else if (orn === 'stars') { for(let j=0; j<5; j++) { ctx.lineTo(Math.cos((18+j*72)*Math.PI/180)*s+x, Math.sin((18+j*72)*Math.PI/180)*s+y); ctx.lineTo(Math.cos((54+j*72)*Math.PI/180)*(s/2)+x, Math.sin((54+j*72)*Math.PI/180)*(s/2)+y); } }
+                else if (orn === 'hearts') { ctx.moveTo(x, y+s/4); ctx.bezierCurveTo(x, y, x-s, y, x-s, y+s/2); ctx.bezierCurveTo(x-s, y+s, x, y+s*1.2, x, y+s*1.5); ctx.bezierCurveTo(x, y+s*1.2, x+s, y+s, x+s, y+s/2); ctx.bezierCurveTo(x+s, y, x, y, x, y+s/4); }
+                else if (orn === 'snowflakes') { for(let j=0; j<6; j++){ ctx.moveTo(x,y); ctx.lineTo(x+Math.cos(j*Math.PI/3)*s, y+Math.sin(j*Math.PI/3)*s); } ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.stroke(); continue; }
+                else if (orn === 'hexagons') { for(let j=0; j<6; j++) ctx.lineTo(x+s*Math.cos(j*Math.PI/3), y+s*Math.sin(j*Math.PI/3)); }
+                else if (orn === 'triangles') { for(let j=0; j<3; j++) ctx.lineTo(x+s*Math.cos(j*2*Math.PI/3), y+s*Math.sin(j*2*Math.PI/3)); }
+                else if (orn === 'plus') { ctx.rect(x-s/2, y-2, s, 4); ctx.rect(x-2, y-s/2, 4, s); }
+                else if (orn === 'dots') ctx.arc(x,y,2,0,Math.PI*2);
+                else if (orn === 'bubbles') { ctx.arc(x,y,s,0,Math.PI*2); ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.stroke(); continue;}
+                else if (orn === 'leaves') ctx.ellipse(x,y,s,s/2,Math.random(),0,Math.PI*2);
+                else if (orn === 'confetti') { ctx.rect(x,y,s,s/3); ctx.fillStyle=`hsla(${Math.random()*360},70%,70%,0.3)`; }
+                else if (orn === 'diamonds') { ctx.moveTo(x,y-s); ctx.lineTo(x+s,y); ctx.lineTo(x,y+s); ctx.lineTo(x-s,y); }
+                else if (orn === 'rings') { ctx.arc(x,y,s,0,Math.PI*2); ctx.arc(x,y,s-2,0,Math.PI*2); ctx.fill("evenodd"); continue; }
+                else if (orn === 'waves') { ctx.moveTo(x,y); ctx.bezierCurveTo(x+s, y-s, x+s*2, y+s, x+s*3, y); ctx.strokeStyle="rgba(255,255,255,0.1)"; ctx.stroke(); continue;}
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawEyes(cCtx, off, cSize, mCount) {
+            const eSize = cSize * 7;
+            const poses = [{x:off, y:off}, {x:off+(mCount-7)*cSize, y:off}, {x:off, y:off+(mCount-7)*cSize}];
+            poses.forEach(p => {
+                cCtx.strokeStyle = colorFgStart.value; cCtx.lineWidth = cSize;
+                if(styleEye.value === 'circle') { cCtx.beginPath(); cCtx.arc(p.x+eSize/2, p.y+eSize/2, eSize/2-cSize/2, 0, Math.PI*2); cCtx.stroke(); }
+                else if(styleEye.value === 'rounded') { cCtx.beginPath(); drawRRect(cCtx, p.x+cSize/2, p.y+cSize/2, eSize-cSize, eSize-cSize, cSize*2); cCtx.stroke(); }
+                else cCtx.strokeRect(p.x+cSize/2, p.y+cSize/2, eSize-cSize, eSize-cSize);
+                
+                cCtx.fillStyle = colorFgEnd.value;
+                if(styleEye.value === 'circle') { cCtx.beginPath(); cCtx.arc(p.x+eSize/2, p.y+eSize/2, cSize*1.5, 0, Math.PI*2); cCtx.fill(); }
+                else if(styleEye.value === 'rounded') { cCtx.beginPath(); drawRRect(cCtx, p.x+cSize*2, p.y+cSize*2, cSize*3, cSize*3, cSize); cCtx.fill(); }
+                else cCtx.fillRect(p.x+cSize*2, p.y+cSize*2, cSize*3, cSize*3);
+            });
+        }
+    </script>
+</body>
+</html>
