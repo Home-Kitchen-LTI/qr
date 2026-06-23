@@ -1,986 +1,2529 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="ms" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Makeup - Aesthetic QR Code Generator & Decorator</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- QRCode Generator Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-    <!-- jsQR Library -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:description" content="Click HERE to Order.">
+
+  <title>Home Kitchen | Haute Gastronomy</title>
+  <link class="rounded-full" rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              950: '#0B0B0C',
+              900: '#121214',
+              800: '#1A1A1C',
+              700: '#242427',
+              600: '#2E2E33',
+            },
+            lime: {
+              400: '#E1FF26',
+              500: '#D4FF00',
+              600: '#B8E000',
+            },
+            brand: {
+              500: '#D4FF00', // Override brand primary to Lime for premium asset mapping
+              600: '#B8E000',
+            }
+          },
+          fontFamily: {
+            serif: ['Cormorant Garamond', 'Playfair Display', 'serif'],
+            sans: ['Inter', 'Plus Jakarta Sans', 'sans-serif'],
+          },
+          animation: {
+            'marquee': 'marquee 30s linear infinite',
+            'marquee-reverse': 'marquee-reverse 30s linear infinite',
+            'shimmer-premium': 'shimmer-premium 3s infinite linear',
+            'glow-pulse': 'glow-pulse 2s infinite ease-in-out',
+            'float-premium': 'float-premium 4s infinite ease-in-out'
+          },
+          keyframes: {
+            marquee: {
+              '0%': { transform: 'translateX(0%)' },
+              '100%': { transform: 'translateX(-50%)' }
+            },
+            'marquee-reverse': {
+              '0%': { transform: 'translateX(-50%)' },
+              '100%': { transform: 'translateX(0%)' }
+            },
+            'shimmer-premium': {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' }
+            },
+            'glow-pulse': {
+              '0%, 100%': { opacity: '0.8', boxShadow: '0 0 10px rgba(212, 255, 0, 0.2)' },
+              '50%': { opacity: '1', boxShadow: '0 0 25px rgba(212, 255, 0, 0.5)' }
+            },
+            'float-premium': {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-8px)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts dengan Cormorant Garamond & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Premium Glassmorphism & Custom Accents */
+    .glass-panel {
+      background: rgba(26, 26, 28, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glass-input {
+      background: rgba(11, 11, 12, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-input:focus {
+      border-color: #D4FF00;
+      box-shadow: 0 0 10px rgba(212, 255, 0, 0.15);
+    }
+    .lime-glow {
+      box-shadow: 0 0 20px rgba(212, 255, 0, 0.15);
+    }
+    .lime-glow-hover:hover {
+      box-shadow: 0 0 25px rgba(212, 255, 0, 0.3);
+    }
     
-    <!-- Firebase Legacy Compat SDKs (Stabil untuk aplikasi HTML tunggal) -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    /* Smooth transitions */
+    .theme-transition {
+      transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                  border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                  box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
     
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
-        
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            margin: 0;
-            min-height: 100vh;
-            overflow-x: hidden;
-            background: linear-gradient(125deg, #0f172a 0%, #1e1b4b 30%, #312e81 60%, #0f172a 100%);
-            background-size: 400% 400%;
-            animation: aurora-bg 15s ease infinite;
-            position: relative;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.15), transparent 50%),
-                        radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.15), transparent 40%),
-                        radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.1), transparent 40%);
-            z-index: -1;
-            filter: blur(80px);
-            animation: aurora-move 10s ease-in-out infinite alternate;
-        }
-
-        @keyframes aurora-bg {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes aurora-move {
-            0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.1) translate(2%, 5%); }
-        }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
-
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    </style>
+    /* Vue list animations */
+    .list-move,
+    .list-enter-active,
+    .list-leave-active {
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .list-enter-from,
+    .list-leave-to {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .list-leave-active {
+      position: absolute;
+    }
+    
+    /* Hide scrollbars but keep functionality */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    [v-cloak] {
+      display: none !important;
+    }
+  </style>
 </head>
-<body class="text-slate-100 p-3 md:p-8">
+<body class="bg-obsidian-950 text-white dark:bg-obsidian-950 dark:text-white theme-transition min-h-screen flex flex-col justify-between font-sans selection:bg-lime-500 selection:text-black">
 
-    <div class="max-w-7xl mx-auto">
-        <!-- HEADER -->
-        <header class="flex flex-col md:flex-row items-center justify-between mb-8 pb-6 border-b border-slate-800 gap-4">
-            <button onclick="openAuthModal()" class="flex items-center gap-3 hover:opacity-90 transition text-left group">
-                <div class="bg-gradient-to-tr from-pink-500 to-violet-600 p-2.5 rounded-2xl shadow-lg shadow-pink-500/20 group-hover:scale-105 transition duration-300">
-                    <i data-lucide="sparkles" class="w-8 h-8 text-white animate-pulse"></i>
-                </div>
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-pink-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
-                        QR Makeup
-                    </h1>
-                    <p class="text-xs md:text-sm text-slate-400 flex items-center gap-1.5">
-                        <span>Seni Rekaan QR Code Estetik</span> 
-                        <span class="text-pink-400 font-bold">• Profil / Akses Admin</span>
-                    </p>
-                </div>
-            </button>
-            
-            <div class="flex items-center gap-3">
-                <div id="user-badge" class="hidden items-center gap-2 bg-slate-800/80 backdrop-blur px-4 py-2 rounded-full border border-slate-700/50 text-xs">
-                    <span id="user-badge-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                    <span id="user-badge-email" class="text-slate-300 truncate max-w-[150px]">Guest</span>
-                </div>
-                <div class="flex items-center gap-2 bg-slate-800/80 backdrop-blur px-4 py-2 rounded-full border border-slate-700/50 text-xs text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                    <span>Mod Automatik Aktif</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- TOAST BANNER -->
-        <div id="toast-banner" class="hidden fixed bottom-5 right-5 z-50 flex items-center gap-3 glass-panel text-slate-100 px-5 py-4 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-10">
-            <div id="toast-icon" class="p-2 rounded-lg bg-pink-500/20 text-pink-400">
-                <i data-lucide="info" class="w-5 h-5"></i>
-            </div>
-            <div>
-                <h4 id="toast-title" class="font-bold text-sm">Notifikasi</h4>
-                <p id="toast-message" class="text-xs text-slate-400">Mesej sistem.</p>
-            </div>
-            <button onclick="hideToast()" class="text-slate-400 hover:text-slate-200 ml-4">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <!-- FIREBASE AUTH & ADMIN MODAL -->
-        <div id="auth-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-            <div class="glass-panel w-full max-w-lg rounded-3xl p-6 relative overflow-hidden">
-                <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-
-                <!-- STATUS 1: BELUM LOG IN -->
-                <div id="auth-logged-out-section" class="space-y-4">
-                    <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-400 flex items-center gap-2">
-                        <i data-lucide="lock" class="w-5 h-5 text-pink-400"></i>
-                        <span>Log Masuk / Daftar Akaun</span>
-                    </h3>
-                    <p class="text-xs text-slate-400">Log masuk untuk menyimpan rekaan secara automatik ke cloud dan akses fungsi admin.</p>
-                    
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">Alamat E-mel</label>
-                            <input type="email" id="auth-email" placeholder="contoh@qrmakeup.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-pink-500 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">Kata Laluan</label>
-                            <input type="password" id="auth-password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-pink-500 text-white">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 pt-2">
-                        <button onclick="handleEmailLogin()" class="bg-gradient-to-r from-pink-500 to-violet-600 hover:opacity-95 text-white text-sm font-bold py-3 rounded-xl transition">
-                            Log Masuk
-                        </button>
-                        <button onclick="handleEmailSignUp()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold py-3 rounded-xl transition">
-                            Daftar Akaun
-                        </button>
-                    </div>
-                    <div class="text-[11px] text-center text-slate-500">
-                        *Tip: E-mel yang mengandungi perkataan "admin" (cth: <span class="text-slate-400 font-mono">admin@qrmakeup.com</span>) akan mendapat akses Admin!
-                    </div>
-                </div>
-
-                <!-- STATUS 2: SUDAH LOG IN -->
-                <div id="auth-logged-in-section" class="hidden space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
-                                <i data-lucide="user-check" class="text-emerald-400 w-5 h-5"></i>
-                                <span>Profil Pengguna</span>
-                            </h3>
-                            <p id="profile-email-display" class="text-xs text-slate-400 font-mono mt-1">user@example.com</p>
-                        </div>
-                        <button onclick="handleLogout()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-semibold flex items-center gap-1 transition">
-                            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Log Keluar
-                        </button>
-                    </div>
-
-                    <!-- ADMIN ACCESS DASHBOARD -->
-                    <div id="admin-dashboard" class="hidden space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h4 class="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                                <i data-lucide="shield-alert" class="w-4 h-4"></i> Pemantauan Pangkalan Data Admin
-                            </h4>
-                            <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">Admin Sahaja</span>
-                        </div>
-
-                        <!-- Firestore Database List -->
-                        <div id="admin-data-list" class="max-h-[250px] overflow-y-auto space-y-2.5 pr-1">
-                            <p class="text-xs text-slate-500 text-center py-6">Tiada rekod dimuat naik.</p>
-                        </div>
-                    </div>
-
-                    <!-- NORMAL USER BACKUP INFO -->
-                    <div id="user-backup-info" class="bg-indigo-950/40 border border-indigo-500/20 rounded-2xl p-4 text-xs text-slate-300 space-y-2">
-                        <h4 class="font-bold flex items-center gap-1 text-pink-400">
-                            <i data-lucide="cloud-lightning" class="w-3.5 h-3.5"></i> Backup Cloud Automatik Aktif
-                        </h4>
-                        <p class="leading-relaxed">Setiap QR Code yang anda jana akan disimpan secara automatik di bawah akaun anda. Hanya pihak Admin sahaja yang boleh melihat rekaan persekitaran yang dikongsi.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- MAIN LAYOUT -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            <!-- LEFT PANEL -->
-            <div class="lg:col-span-7 space-y-6">
-                
-                <!-- STEP 1: DATA SOURCE -->
-                <section class="glass-panel rounded-3xl p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="bg-pink-500/10 text-pink-400 px-2.5 py-1 rounded-lg text-xs font-bold">Step 1</span>
-                        <h2 class="text-lg font-bold">QR Code Data Source</h2>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button id="btn-mode-upload" onclick="switchInputMode('upload')" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-pink-500/30 bg-pink-500/10 text-white font-medium text-sm transition">
-                            <i data-lucide="upload-cloud" class="w-4 h-4"></i> Upload Original QR
-                        </button>
-                        <button id="btn-mode-text" onclick="switchInputMode('text')" class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 font-medium text-sm transition">
-                            <i data-lucide="link" class="w-4 h-4"></i> New Text / URL
-                        </button>
-                    </div>
-
-                    <div id="container-upload" class="space-y-4">
-                        <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-pink-500/50 bg-slate-950/40 transition rounded-2xl p-6 cursor-pointer group text-center">
-                            <input type="file" id="qr-file-input" accept="image/*" class="hidden" onchange="handleQRUpload(event)">
-                            <div class="bg-slate-800 group-hover:bg-pink-500/10 p-4 rounded-full transition mb-3">
-                                <i data-lucide="qr-code" class="w-8 h-8 text-slate-400 group-hover:text-pink-400 transition"></i>
-                            </div>
-                            <span class="text-sm font-semibold text-slate-300">Choose QR Code image to Decorate</span>
-                        </label>
-                        <div id="decoded-info" class="hidden bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-400 flex items-center gap-2.5">
-                            <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
-                            <span id="decoded-text-preview" class="font-mono truncate">Waiting...</span>
-                        </div>
-                    </div>
-
-                    <div id="container-text" class="hidden space-y-3">
-                        <input type="text" id="qr-text-input" oninput="regenerateStyledQR()" placeholder="Enter URL or text" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl py-3 px-4 text-sm text-white outline-none" value="https://google.com">
-                    </div>
-                </section>
-
-                <!-- STEP 2: PRESETS -->
-                <section class="glass-panel rounded-3xl p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="bg-pink-500/10 text-pink-400 px-2.5 py-1 rounded-lg text-xs font-bold">Step 2</span>
-                        <h2 class="text-lg font-bold">Makeup Presets</h2>
-                    </div>
-                    <div class="grid grid-cols-3 md:grid-cols-5 gap-3" id="theme-selectors-grid"></div>
-                </section>
-
-                <!-- STEP 3: CUSTOMIZATION -->
-                <section class="glass-panel rounded-3xl p-6 space-y-6">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="bg-pink-500/10 text-pink-400 px-2.5 py-1 rounded-lg text-xs font-bold">Step 3</span>
-                        <h2 class="text-lg font-bold">Environment & Details</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Bottom Label Tag -->
-                        <div class="space-y-2 md:col-span-2">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Bottom Label Tag (Real-time)</label>
-                            <input type="text" id="qr-label-tag" oninput="regenerateStyledQR()" placeholder="e.g. SCAN ME / FOLLOW US" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-pink-500 transition">
-                        </div>
-
-                        <!-- Custom Background Upload -->
-                        <div class="space-y-2 md:col-span-2">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Environment Background (Custom Image)</label>
-                            <div class="flex items-center gap-4">
-                                <label class="flex-1 flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-3 rounded-xl cursor-pointer text-sm text-slate-300 transition hover:bg-slate-900">
-                                    <i data-lucide="image-plus" class="w-4 h-4 text-emerald-400"></i>
-                                    <span id="bg-upload-name">Upload Custom Image</span>
-                                    <input type="file" id="bg-file-input" accept="image/*" class="hidden" onchange="handleBgUpload(event)">
-                                </label>
-                                <button id="btn-remove-bg" onclick="removeCustomBg()" class="hidden p-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition">
-                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Ornaments Selection -->
-                        <div class="space-y-2">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Background Ornament</label>
-                            <select id="style-ornament" onchange="regenerateStyledQR()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none">
-                                <option value="particles" selected>Soft Particles</option>
-                                <option value="stars">Shiny Sparkles</option>
-                                <option value="leaves">Eco Leaves</option>
-                                <option value="waves">Modern Waves</option>
-                                <option value="snowflakes">Winter Snowflakes</option>
-                                <option value="hearts">Sweet Hearts</option>
-                                <option value="hexagons">Tech Hexagons</option>
-                                <option value="triangles">Geo Triangles</option>
-                                <option value="plus">Plus Grid</option>
-                                <option value="dots">Dots Grid</option>
-                                <option value="bubbles">Floating Bubbles</option>
-                                <option value="confetti">Festive Confetti</option>
-                                <option value="diamonds">Luxe Diamonds</option>
-                                <option value="rings">Etheric Rings</option>
-                                <option value="none">Plain (Gradient Only)</option>
-                            </select>
-                        </div>
-
-                        <!-- Dots Style -->
-                        <div class="space-y-2">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">QR Dots Style</label>
-                            <select id="style-dots" onchange="regenerateStyledQR()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none">
-                                <option value="square">Square</option>
-                                <option value="circle" selected>Circle</option>
-                                <option value="rounded-rect">Capsule</option>
-                                <option value="diamond">Diamond</option>
-                            </select>
-                        </div>
-
-                        <!-- Gradient Colors -->
-                        <div class="space-y-2">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">QR Gradient Color</label>
-                            <div class="flex gap-2">
-                                <input type="color" id="color-fg-start" oninput="regenerateStyledQR()" value="#ec4899" class="w-12 h-10 rounded border-0 bg-transparent cursor-pointer">
-                                <input type="color" id="color-fg-end" oninput="regenerateStyledQR()" value="#8b5cf6" class="w-12 h-10 rounded border-0 bg-transparent cursor-pointer">
-                            </div>
-                        </div>
-
-                        <!-- Eye Style -->
-                        <div class="space-y-2">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Eye Style</label>
-                            <select id="style-eye" onchange="regenerateStyledQR()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none">
-                                <option value="square">Square</option>
-                                <option value="rounded" selected>Rounded</option>
-                                <option value="circle">Circle</option>
-                            </select>
-                        </div>
-
-                        <!-- Logo Upload -->
-                        <div class="md:col-span-2 space-y-2">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Center Logo</label>
-                            <div class="flex items-center gap-4">
-                                <label class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-3 rounded-xl cursor-pointer text-sm text-slate-300">
-                                    <i data-lucide="image" class="w-4 h-4 text-pink-400"></i>
-                                    <span>Pick Logo</span>
-                                    <input type="file" id="logo-file-input" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
-                                </label>
-                                <div id="logo-preview-container" class="hidden flex items-center gap-2">
-                                    <img id="logo-preview" class="w-8 h-8 rounded-lg object-contain bg-slate-900 border">
-                                    <button onclick="removeLogo()" class="text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- RIGHT PANEL -->
-            <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-8">
-                <div class="glass-panel rounded-3xl p-6 flex flex-col items-center">
-                    <div class="w-full flex justify-between mb-4 border-b border-slate-800 pb-3">
-                        <h3 class="font-bold text-sm tracking-wide text-slate-300 uppercase">Aesthetic Preview</h3>
-                        <span class="text-xs text-slate-400" id="current-theme-badge">Theme: Sweet Blush</span>
-                    </div>
-
-                    <div class="relative w-full aspect-square max-w-[360px] bg-slate-950 rounded-2xl p-3 overflow-hidden border border-slate-800">
-                        <canvas id="qr-display-canvas" width="800" height="800" class="w-full h-full rounded-xl transition-all duration-300"></canvas>
-                        <div id="canvas-loader" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 opacity-0 pointer-events-none transition">
-                            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-pink-500"></div>
-                        </div>
-                    </div>
-
-                    <!-- Scanner Readability Feature -->
-                    <div class="w-full max-w-[360px] mt-4 p-3.5 bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
-                        <div class="flex justify-between font-semibold">
-                            <span>Scanner Readability:</span>
-                            <span class="text-emerald-400 font-bold" id="safety-score">99% (Very Safe)</span>
-                        </div>
-                        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                            <div id="safety-bar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-300" style="width: 99%"></div>
-                        </div>
-                        <span class="block text-[10px] text-slate-500 pt-1 leading-relaxed">
-                            Tip: Keep high contrast between QR dots and background for easier scanning.
-                        </span>
-                    </div>
-
-                    <div class="w-full mt-5 grid grid-cols-2 gap-3">
-                        <button onclick="downloadQR('png')" class="flex items-center justify-center gap-2 bg-slate-800 text-white font-semibold py-3 rounded-xl transition text-sm">
-                            <i data-lucide="download" class="w-4 h-4"></i> PNG
-                        </button>
-                        <button onclick="downloadQR('jpg')" class="flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-violet-600 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm">
-                            <i data-lucide="share-2" class="w-4 h-4"></i> JPG
-                        </button>
-                    </div>
-                </div>
-
-                <!-- How to Use Card -->
-                <div class="glass-panel rounded-3xl p-6 text-xs text-slate-400 leading-relaxed">
-                    <h4 class="font-bold text-slate-300 mb-2 flex items-center gap-1.5">
-                        <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i> How to Use
-                    </h4>
-                    <ol class="list-decimal pl-4 space-y-1.5">
-                        <li>Upload your original QR Code image OR select "New Text / URL" to create one from scratch.</li>
-                        <li>Our system will extract data if an image is uploaded.</li>
-                        <li>Choose a makeup preset to change the environment instantly.</li>
-                        <li>Customize colors, dots, and add a logo as needed.</li>
-                        <li>Use PNG or JPG buttons to download your customized, aesthetic QR Code.</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
+  <div id="app" v-cloak class="flex-grow">
+    
+    <!-- Top Alert Banner: Closed / Emergency Store Status -->
+    <div v-if="!isStoreOpen" class="bg-red-950/80 border-b border-red-800/40 text-red-200 py-3 px-4 sticky top-0 z-50 backdrop-blur-md text-center text-xs md:text-sm font-semibold tracking-wide flex items-center justify-center gap-2.5">
+      <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+      <span class="font-light">
+        Dapur Ditutup Sementara • <strong class="font-bold text-red-400">Re-opens soon!</strong> (Operasi: {{ formatHour(storeSettings.openHour) }} - {{ formatHour(storeSettings.closeHour) }}{{ storeSettings.offDay ? `, Cuti: ${formatDay(storeSettings.offDay)}` : '' }})
+      </span>
     </div>
 
-    <!-- MAIN INTERACTIVE LOGIC & FIREBASE SDK SYSTEM -->
-    <script>
-        // Nyatakan elemen HTML & state global terlebih dahulu
-        const canvas = document.getElementById('qr-display-canvas');
-        const ctx = canvas.getContext('2d');
-        const loader = document.getElementById('canvas-loader');
-        const styleDots = document.getElementById('style-dots');
-        const styleEye = document.getElementById('style-eye');
-        const styleOrnament = document.getElementById('style-ornament');
-        const colorFgStart = document.getElementById('color-fg-start');
-        const colorFgEnd = document.getElementById('color-fg-end');
-        const qrLabelTag = document.getElementById('qr-label-tag');
+    <!-- Header / Navigation Bar -->
+    <header class="border-b border-white/5 bg-obsidian-950/80 backdrop-blur-xl sticky {{ isStoreOpen ? 'top-0' : 'top-[45px]' }} z-40 transition-all duration-300">
+      <div class="max-w-6xl mx-auto px-4 py-5 flex items-center justify-between">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 cursor-pointer group" @click="setView('menu')">
+          <div class="w-9 h-9 rounded-[8px] overflow-hidden border border-white/10 bg-obsidian-800 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12">
+            <img src="https://firebasestorage.googleapis.com/v0/b/iodigital-eb34a.firebasestorage.app/o/IMG_0065.JPG.jpeg?alt=media&token=3ceb2984-1feb-4c95-bad3-48b4326b2b28" alt="Logo" class="w-full h-full object-cover">
+          </div>
+          <div>
+            <h1 class="text-xl font-serif font-bold tracking-tight text-white transition-colors duration-300 group-hover:text-lime-500">
+              Home <span class="italic font-light text-lime-500">Kitchen</span>
+            </h1>
+            <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Haute Local Taste</p>
+          </div>
+        </div>
 
-        let inputMode = 'upload'; 
-        let decodedQRData = 'https://google.com'; 
-        let centerLogoImg = null;
-        let customBgImg = null;
-        let saveDebounceTimeout = null;
+        <!-- Navigation Actions -->
+        <div class="flex items-center gap-4">
+          <!-- Realtime Status Badge -->
+          <div class="hidden sm:flex items-center gap-2 bg-obsidian-900 border border-white/5 px-3 py-1.5 rounded-[8px] text-[10px] font-black tracking-widest">
+            <span class="w-1.5 h-1.5 rounded-full" :class="isStoreOpen ? 'bg-lime-500 animate-pulse' : 'bg-red-500'"></span>
+            <span :class="isStoreOpen ? 'text-lime-500' : 'text-red-500'">
+              {{ isStoreOpen ? 'ACTIVE' : 'OFFLINE' }}
+            </span>
+          </div>
 
-        const themes = {
-            'sweet-blush': { name: 'Sweet Blush', dotsStyle: 'circle', eyeStyle: 'rounded', colorFgStart: '#ec4899', colorFgEnd: '#8b5cf6', cls: 'from-rose-400 to-pink-500', orn: 'particles', bg: ['#ffe4e6', '#f3e8ff'] },
-            'gold-luxe': { name: 'Gold Luxe', dotsStyle: 'rounded-rect', eyeStyle: 'rounded', colorFgStart: '#b45309', colorFgEnd: '#ca8a04', cls: 'from-amber-300 to-amber-700', orn: 'stars', bg: ['#0f172a', '#1e293b'] },
-            'cyber-neon': { name: 'Cyber Neon', dotsStyle: 'square', eyeStyle: 'square', colorFgStart: '#06b6d4', colorFgEnd: '#ec4899', cls: 'from-cyan-400 to-indigo-600', orn: 'waves', bg: ['#030712', '#0f172a'] },
-            'eco-leaf': { name: 'Eco Leaf', dotsStyle: 'circle', eyeStyle: 'circle', colorFgStart: '#10b981', colorFgEnd: '#064e3b', cls: 'from-emerald-400 to-teal-800', orn: 'leaves', bg: ['#f0fdf4', '#dcfce7'] },
-            'midnight': { name: 'Midnight', dotsStyle: 'square', eyeStyle: 'square', colorFgStart: '#ffffff', colorFgEnd: '#4b5563', cls: 'from-gray-700 to-black', orn: 'plus', bg: ['#000000', '#111827'] }
+          <!-- Peti Cadangan / Maklumbalas -->
+          <button v-if="!isAdminMode" @click="openFeedbackModal" class="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-white/5 hover:bg-lime-500 hover:text-black border border-white/5 text-gray-300 text-xs font-bold transition duration-300">
+            <i class="far fa-comment-dots text-xs"></i>
+            <span>Cadangan</span>
+          </button>
+
+          <!-- Dark/Light Theme (Retained but premium optimized) -->
+          <button @click="toggleTheme" class="w-9 h-9 rounded-[8px] bg-white/5 border border-white/5 flex items-center justify-center text-gray-400 hover:text-lime-500 transition duration-300" aria-label="Toggle Theme">
+            <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+          </button>
+
+          <!-- Admin Portal Switch -->
+          <button @click="toggleAdminView" class="flex items-center gap-2 px-3.5 py-1.5 rounded-[8px] border font-bold text-xs transition-all duration-300"
+            :class="isAdminMode ? 'bg-lime-500 text-black border-lime-500' : 'border-white/10 text-gray-300 hover:text-white bg-white/5'">
+            <i class="fas" :class="isAdminMode ? 'fa-store' : 'fa-user-tie'"></i>
+            <span>{{ isAdminMode ? 'Portal Kedai' : 'Admin' }}</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-6xl mx-auto px-4 py-8 pb-32">
+      
+      <!-- LOADING STATE -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-32">
+        <div class="relative w-12 h-12">
+          <div class="absolute inset-0 border-2 border-white/5 rounded-full"></div>
+          <div class="absolute inset-0 border-2 border-t-lime-500 rounded-full animate-spin"></div>
+        </div>
+        <p class="text-[11px] uppercase tracking-widest font-black text-gray-500 mt-6 animate-pulse">Establishing Cinematic Connection...</p>
+      </div>
+
+      <div v-else>
+        <!-- ==================== CUSTOMER VIEW ==================== -->
+        <div v-if="!isAdminMode">
+          
+          <!-- Premium Hero Section with Ambient Backdrops & Cinematic Styling -->
+          <div class="relative rounded-[8px] overflow-hidden mb-12 bg-obsidian-900 border border-white/5 min-h-[420px] flex items-center p-6 md:p-12 overflow-hidden">
+            <!-- Background Images Cross-Fade -->
+            <div class="absolute inset-0 z-0">
+              <transition-group name="list">
+                <div v-for="(image, index) in storeSettings.heroImages" :key="image"
+                  v-show="currentHeroIndex === index"
+                  class="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out scale-105"
+                  :style="{ backgroundImage: 'url(\'' + image + '\')' }">
+                </div>
+              </transition-group>
+              <!-- Extreme Premium Dark Overlay -->
+              <div class="absolute inset-0 bg-gradient-to-r from-obsidian-950 via-obsidian-950/80 to-transparent z-10"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian-950 to-transparent z-10"></div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="relative z-20 max-w-xl w-full">
+              <div class="flex flex-wrap gap-2 mb-6">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-[4px] text-[9px] font-black tracking-widest uppercase bg-lime-500 text-black">
+                  <span class="w-1.5 h-1.5 rounded-full bg-black animate-ping"></span>
+                  {{ isStoreOpen ? 'Accepting Orders' : 'Offline' }}
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-[4px] text-[9px] font-bold tracking-widest uppercase bg-white/10 text-white border border-white/10 backdrop-blur-md">
+                  <i class="fas fa-location-dot text-lime-500"></i>
+                  <span>BANDAR LAGENDA, TELUK INTAN</span>
+                </span>
+              </div>
+              
+              <h2 class="text-5xl md:text-7xl font-serif leading-none tracking-tight text-white mb-4">
+                Makan Sedap, <br>
+                <span class="italic font-light text-lime-500">Rasa Rumah.</span>
+              </h2>
+              <p class="text-sm md:text-base text-gray-400 font-light mb-8 max-w-md leading-relaxed">
+                Nikmati mahakarya masakan tradisional yang diolah segar dari dapur kami terus ke meja hidangan anda dengan penghantaran eksklusif.
+              </p>
+
+              <!-- Live Information Rows -->
+              <div class="flex flex-wrap gap-3 text-[11px] font-bold tracking-widest text-gray-300">
+                <span class="flex items-center gap-2 bg-white/5 border border-white/5 px-4 py-2 rounded-[8px] backdrop-blur-md">
+                  <i class="far fa-clock text-lime-500"></i>
+                  <span>HOURS: {{ formatHour(storeSettings.openHour) }} - {{ formatHour(storeSettings.closeHour) }}</span>
+                </span>
+                <span class="flex items-center gap-2 bg-white/5 border border-white/5 px-4 py-2 rounded-[8px] backdrop-blur-md">
+                  <i class="fas fa-truck text-lime-500"></i>
+                  <span>COD FROM RM {{ parseFloat(storeSettings.codCharge || 1.00).toFixed(2) }}</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Hero Slider Indicators -->
+            <div v-if="storeSettings.heroImages && storeSettings.heroImages.length > 1" class="absolute bottom-6 right-6 z-20 flex gap-2">
+              <button v-for="(img, idx) in storeSettings.heroImages" :key="idx" 
+                @click="currentHeroIndex = idx; resetHeroTimer()"
+                class="w-2 h-2 rounded-full transition-all duration-300"
+                :class="currentHeroIndex === idx ? 'bg-lime-500 w-6' : 'bg-white/20 hover:bg-white/50'">
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Loop Marquee Text Belt (Cinematic element) -->
+          <div class="relative overflow-hidden w-full py-4 border-y border-white/5 mb-12 bg-obsidian-950">
+            <div class="flex whitespace-nowrap animate-marquee">
+              <div class="flex gap-16 text-xs font-bold tracking-[0.2em] text-gray-400 uppercase">
+                <span v-for="n in 6" :key="n" class="flex items-center gap-3">
+                  BUILT WITH PASSION <span class="text-lime-500">•</span> 
+                  KITCHEN IS {{ isStoreOpen ? 'OPEN' : 'CLOSED' }} <span class="text-lime-500">•</span> 
+                  PREMIUM QUALITY INGREDIENTS <span class="text-lime-500">•</span> 
+                  SECURE COD SYSTEM
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Up-Selling Promotion Spotlights (Aesthetic Banner) -->
+          <div v-if="isStoreOpen" class="mb-12">
+            <div class="bg-gradient-to-r from-obsidian-900 to-obsidian-800 border border-lime-500/20 rounded-[8px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+              <div class="absolute -right-8 -bottom-8 opacity-5 text-[150px] font-black pointer-events-none">
+                COMBO
+              </div>
+              <div class="z-10">
+                <span class="text-[9px] uppercase tracking-widest font-black text-lime-500 px-2 py-0.5 border border-lime-500/30 rounded">Exclusive Upgrade</span>
+                <h3 class="text-xl md:text-2xl font-serif text-white mt-3">Promosi Pembelian Pukal (Pakej Jimat)</h3>
+                <p class="text-xs text-gray-400 mt-1 max-w-xl font-light">
+                  Beli mana-mana 3 hidangan atau lebih dalam satu pesanan untuk melayakkan anda menerima ganjaran diskaun automatik serta potongan caj penghantaran istimewa.
+                </p>
+              </div>
+              <div class="shrink-0 z-10">
+                <button @click="selectedCategory = 'Semua'" class="px-5 py-3 rounded-[8px] bg-lime-500 hover:bg-lime-600 text-black font-bold text-xs uppercase tracking-wider transition-all duration-300">
+                  Lihat Semua Menu <i class="fas fa-arrow-right ml-1.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Category Filter Bar -->
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            <div>
+              <h3 class="text-3xl font-serif text-white tracking-tight">
+                Sajian <span class="italic font-light text-lime-500">Istimewa Kami</span>
+              </h3>
+              <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">Selected dishes handcrafted daily with fresh local ingredients</p>
+            </div>
+
+            <!-- View Modes & Counter -->
+            <div class="flex items-center gap-3">
+              <div class="inline-flex p-1 bg-obsidian-900 rounded-[8px] border border-white/5">
+                <button @click="viewMode = 'grid'" 
+                  class="px-3 py-1.5 rounded-[6px] text-[10px] font-black tracking-wider transition-all duration-200"
+                  :class="viewMode === 'grid' ? 'bg-lime-500 text-black' : 'text-gray-400 hover:text-white'">
+                  GRID
+                </button>
+                <button @click="viewMode = 'details'" 
+                  class="px-3 py-1.5 rounded-[6px] text-[10px] font-black tracking-wider transition-all duration-200"
+                  :class="viewMode === 'details' ? 'bg-lime-500 text-black' : 'text-gray-400 hover:text-white'">
+                  LIST
+                </button>
+              </div>
+              <span class="text-xs text-gray-400 bg-obsidian-900 border border-white/5 px-3 py-2 rounded-[8px] font-semibold">
+                {{ visibleMenuItems.length }} Item
+              </span>
+            </div>
+          </div>
+
+          <!-- Category Select Slider -->
+          <div class="mb-10 overflow-x-auto scrollbar-none flex gap-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+            <button v-for="cat in uniqueCategories" :key="cat"
+              @click="selectedCategory = cat"
+              class="px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-[8px] transition-all shrink-0 border"
+              :class="selectedCategory === cat 
+                ? 'bg-lime-500 text-black border-lime-500 font-bold' 
+                : 'bg-obsidian-900 text-gray-400 border-white/5 hover:text-white hover:border-white/10'">
+              {{ cat }}
+            </button>
+          </div>
+
+          <!-- Bento Grid / Lists Layout -->
+          <div class="grid relative" :class="viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'grid-cols-1 gap-4'">
+            <transition-group name="list">
+              <div v-for="item in sortedMenuItems" :key="item.id"
+                class="glass-panel rounded-[8px] overflow-hidden flex flex-col justify-between transition-all duration-500 relative group border border-white/5"
+                :class="[
+                  item.isSoldOut ? 'opacity-50 grayscale' : '',
+                  item.isBestSeller && viewMode === 'grid' ? 'lg:col-span-2 border-lime-500/30 shadow-[0_0_15px_rgba(212,255,0,0.05)]' : '',
+                  viewMode === 'details' ? 'md:flex-row' : ''
+                ]">
+                
+                <!-- Display Image Section -->
+                <div class="relative bg-obsidian-950 overflow-hidden shrink-0 aspect-video md:aspect-auto"
+                  :class="[
+                    viewMode === 'grid' ? 'w-full' : 'w-full md:w-80 md:h-52',
+                    item.isBestSeller && viewMode === 'grid' ? 'lg:aspect-[21/9]' : ''
+                  ]">
+                  <img :src="item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80'" 
+                    :alt="item.name" 
+                    class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 cursor-zoom-in"
+                    @click="openLightbox(item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80', item.name, item.description)"
+                    @error="handleImageError">
+                  
+                  <!-- Quality Ambient Shadow inside Image -->
+                  <div class="absolute inset-0 bg-gradient-to-t from-obsidian-950/80 to-transparent"></div>
+
+                  <!-- Exclusive Badges -->
+                  <div class="absolute top-4 left-4 flex flex-col gap-2 items-start z-10">
+                    <span v-if="item.discount > 0" class="bg-lime-500 text-black text-[9px] font-black px-2 py-0.5 rounded-[4px] uppercase tracking-widest animate-pulse">
+                      SALE {{ item.discount }}%
+                    </span>
+                    <span v-if="item.isBestSeller" class="bg-white text-black text-[9px] font-black px-2 py-0.5 rounded-[4px] uppercase tracking-widest flex items-center gap-1">
+                      <i class="fas fa-star text-amber-500"></i> BEST SELLER
+                    </span>
+                    <span v-if="item.isRecommended" class="bg-obsidian-900 border border-white/10 text-white text-[9px] font-bold px-2 py-0.5 rounded-[4px] uppercase tracking-widest">
+                      CHEF'S SIGNATURE
+                    </span>
+                  </div>
+
+                  <!-- Sold Out State Overlay -->
+                  <div v-if="item.isSoldOut" class="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-4">
+                    <span class="px-3 py-1.5 border border-red-500 text-red-500 text-[10px] font-black tracking-widest uppercase rounded">
+                      SOLD OUT
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="p-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-[9px] font-bold text-lime-500 uppercase tracking-widest">{{ item.category || 'LAIN-LAIN' }}</span>
+                      <div class="flex gap-2">
+                        <!-- Tiny visual indicators -->
+                        <span v-if="item.isRecommended" class="w-2 h-2 rounded-full bg-lime-500" title="Highly Recommended"></span>
+                      </div>
+                    </div>
+
+                    <h4 class="text-xl font-serif text-white group-hover:text-lime-500 transition-colors duration-300 mb-2">{{ item.name }}</h4>
+                    <p class="text-xs text-gray-400 font-light leading-relaxed mb-4 line-clamp-3">{{ item.description || 'Sajian istimewa dibakar dan dihidang segar harian khas untuk anda.' }}</p>
+
+                    <!-- Client Side Variant Selection -->
+                    <div v-if="item.variants && item.variants.length > 0" class="mb-4">
+                      <span class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-2">Pilihan Variasi / Saiz:</span>
+                      <div class="flex flex-wrap gap-2">
+                        <button v-for="variant in item.variants" :key="variant.name"
+                          @click="!variant.isSoldOut ? selectedVariants[item.id] = variant.name : null"
+                          class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-[4px] border transition-all duration-300"
+                          :class="[
+                            variant.isSoldOut 
+                              ? 'bg-obsidian-900 text-gray-600 border-white/5 cursor-not-allowed line-through' 
+                              : (selectedVariants[item.id] === variant.name 
+                                ? 'bg-lime-500 text-black border-lime-500 font-black' 
+                                : 'bg-obsidian-950 text-gray-300 border-white/10 hover:text-white hover:border-lime-500/50')
+                          ]">
+                          {{ variant.name }}
+                          <span v-if="variant.priceAdjustment > 0" class="text-[9px] opacity-80">
+                            (+RM{{ parseFloat(variant.priceAdjustment).toFixed(2) }})
+                          </span>
+                          <span v-else-if="variant.priceAdjustment < 0" class="text-[9px] opacity-80">
+                            (-RM{{ Math.abs(parseFloat(variant.priceAdjustment)).toFixed(2) }})
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Custom Remark Inputs inside items -->
+                    <div v-if="item.allowRemarks" class="mb-4">
+                      <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1">Nota Khas (Remarks):</label>
+                      <input type="text" v-model="customerRemarks[item.id]" @input="updateCartRemark(item.id)" placeholder="Contoh: Sambal diasingkan, Extra kuah"
+                        class="w-full px-3 py-2 text-xs rounded-[4px] glass-input text-white outline-none focus:ring-0 transition">
+                    </div>
+                  </div>
+
+                  <!-- Checkout Controls & Pricing -->
+                  <div class="border-t border-white/5 pt-4 flex items-center justify-between mt-6">
+                    <div>
+                      <span class="block text-[8px] text-gray-500 font-bold tracking-widest uppercase">Harga Terkini</span>
+                      <div class="flex items-baseline gap-2">
+                        <span class="text-xl font-bold text-lime-500">
+                          RM {{ getDisplayPrice(item).toFixed(2) }}
+                        </span>
+                        <span v-if="item.discount > 0" class="text-xs text-gray-500 line-through">
+                          RM {{ (parseFloat(item.price) + getSelectedVariantAdjustment(item)).toFixed(2) }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Control Actions -->
+                    <div v-if="isStoreOpen && !item.isSoldOut && !isCurrentVariantSoldOut(item)">
+                      <!-- Cart Action Buttons -->
+                      <div class="flex items-center gap-1 bg-obsidian-950 border border-white/10 p-1 rounded-[6px]">
+                        <button @click="decrementCart(item)" class="w-8 h-8 rounded-[4px] hover:bg-white/5 text-gray-400 hover:text-white transition flex items-center justify-center text-xs">
+                          <i class="fas fa-minus"></i>
+                        </button>
+                        <span class="w-8 text-center font-bold text-xs" :class="{'text-lime-500 scale-110': isPopping === item.id}">
+                          {{ getCartItemCount(item.id) }}
+                        </span>
+                        <button @click="incrementCart(item)" class="w-8 h-8 rounded-[4px] bg-lime-500 text-black hover:bg-lime-400 transition flex items-center justify-center text-xs">
+                          <i class="fas fa-plus"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Lockout Status Flags -->
+                    <div v-else-if="!isStoreOpen" class="text-[9px] font-black text-gray-500 tracking-wider uppercase border border-white/10 px-3 py-1.5 rounded bg-white/5">
+                      CLOSED
+                    </div>
+                    <div v-else class="text-[9px] font-black text-red-500 tracking-wider uppercase border border-red-500/10 px-3 py-1.5 rounded bg-red-500/5">
+                      TIADA STOK
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            </transition-group>
+          </div>
+
+          <!-- Social Proof (Dynamic Testimonials Marquee) -->
+          <div v-if="feedbacks.length > 0" class="mt-20">
+            <div class="text-center mb-10">
+              <span class="text-[10px] font-black tracking-[0.2em] text-lime-500 uppercase">Social Proof</span>
+              <h3 class="text-3xl font-serif text-white mt-1">Ulasan Pelanggan Kami</h3>
+              <p class="text-xs text-gray-400 font-light mt-1">Pengalaman sebenar daripada komuniti setempat</p>
+            </div>
+
+            <!-- Double Row Loop Marquee for Cinematic Testimonials -->
+            <div class="relative overflow-hidden w-full py-4 bg-obsidian-900 border-y border-white/5">
+              <div class="flex whitespace-nowrap animate-marquee hover:[animation-play-state:paused]">
+                <div class="flex gap-6 pr-6">
+                  <div v-for="fb in feedbacks" :key="fb.id" class="inline-block whitespace-normal bg-obsidian-950 border border-white/5 p-4 rounded-[8px] w-80 text-left shrink-0">
+                    <p class="text-xs text-gray-300 font-light italic">"{{ fb.comment }}"</p>
+                    <div class="mt-3 flex items-center justify-between text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                      <span><i class="far fa-user-circle text-lime-500 mr-1"></i> Pelanggan Sah</span>
+                      <span>{{ formatTimestamp(fb.createdAt).split(',')[0] }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ Accordion section -->
+          <div class="mt-20 max-w-3xl mx-auto">
+            <div class="text-center mb-10">
+              <span class="text-[10px] font-black tracking-[0.2em] text-lime-500 uppercase font-bold">SOALAN LAZIM</span>
+              <h3 class="text-3xl font-serif text-white mt-1">Pertanyaan Lazim (FAQ)</h3>
+            </div>
+            <div class="space-y-3">
+              <div v-for="(faq, idx) in faqs" :key="idx" class="border border-white/5 rounded-[8px] overflow-hidden bg-obsidian-900">
+                <button @click="toggleFaq(idx)" class="w-full flex items-center justify-between p-5 text-left font-serif text-lg text-white hover:text-lime-500 transition duration-300">
+                  <span>{{ faq.question }}</span>
+                  <i class="fas transition-transform duration-300 text-xs text-gray-500" :class="activeFaqIndex === idx ? 'fa-chevron-up rotate-180 text-lime-500' : 'fa-chevron-down'"></i>
+                </button>
+                <div v-if="activeFaqIndex === idx" class="px-5 pb-5 pt-1 text-xs text-gray-400 font-light leading-relaxed border-t border-white/5">
+                  {{ faq.answer }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating WhatsApp Action -->
+          <div v-if="!isAdminMode" class="fixed z-40 transition-all duration-300"
+               :class="[cart.length > 0 && isStoreOpen ? 'bottom-28 right-6' : 'bottom-6 right-6']">
+            <button @click="contactWhatsAppDirect" 
+              class="flex items-center justify-center w-14 h-14 rounded-full bg-lime-500 text-black hover:bg-lime-400 shadow-xl shadow-lime-500/20 transition-all duration-300 group relative">
+              <i class="fab fa-whatsapp text-2xl"></i>
+              <span class="absolute right-16 scale-0 group-hover:scale-100 transition-all duration-300 bg-obsidian-900 text-white border border-white/10 text-[10px] font-black tracking-wider uppercase px-3 py-1.5 rounded-[4px] whitespace-nowrap">
+                WhatsApp Us
+              </span>
+            </button>
+          </div>
+
+          <!-- Sticky Float Checkout Bar (Hydration Lime theme) -->
+          <transition enter-active-class="transform transition duration-300 ease-out"
+                      enter-from-class="translate-y-full opacity-0"
+                      enter-to-class="translate-y-0 opacity-100"
+                      leave-active-class="transform transition duration-200 ease-in"
+                      leave-from-class="translate-y-0 opacity-100"
+                      leave-to-class="translate-y-full opacity-0">
+            <div v-if="cart.length > 0 && isStoreOpen" class="fixed bottom-6 left-4 right-4 z-40 max-w-lg mx-auto">
+              <div @click="toggleCheckoutDrawer(true)" class="bg-lime-500 hover:bg-lime-400 text-black p-4 rounded-[8px] shadow-2xl flex items-center justify-between cursor-pointer transition-transform duration-100 active:scale-95">
+                <div class="flex items-center gap-3">
+                  <div class="relative w-10 h-10 bg-black text-lime-500 rounded-[4px] flex items-center justify-center text-md shadow">
+                    <i class="fas fa-shopping-basket"></i>
+                    <span class="absolute -top-1.5 -right-1.5 bg-white text-black font-extrabold text-[10px] w-5 h-5 flex items-center justify-center rounded-full shadow-md">
+                      {{ cartTotalItems }}
+                    </span>
+                  </div>
+                  <div>
+                    <h5 class="font-bold text-xs uppercase tracking-widest">Sahkan Bakul Pesanan</h5>
+                    <p class="text-[10px] text-black/60 font-semibold uppercase">Klik untuk meneruskan pembayaran</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="text-right">
+                    <span class="block text-[8px] font-bold uppercase tracking-widest text-black/50">SUBTOTAL</span>
+                    <span class="text-lg font-black">RM {{ cartSubtotal.toFixed(2) }}</span>
+                  </div>
+                  <i class="fas fa-chevron-up text-md text-black/60 ml-2"></i>
+                </div>
+              </div>
+            </div>
+          </transition>
+
+          <!-- BOTTOM SHEET DRAWER (Glassmorphism design) -->
+          <transition enter-active-class="transition duration-300 ease-out"
+                      enter-from-class="opacity-0"
+                      enter-to-class="opacity-100"
+                      leave-active-class="transition duration-200 ease-in"
+                      leave-from-class="opacity-100"
+                      leave-to-class="opacity-0">
+            <div v-if="showCheckoutDrawer" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end justify-center" @click.self="toggleCheckoutDrawer(false)">
+              <div class="glass-panel w-full max-w-lg rounded-t-[16px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform transition-transform duration-300 border-t border-white/10">
+                
+                <!-- Pull Indicator -->
+                <div class="w-12 h-1 bg-white/20 rounded-full mx-auto my-3 cursor-pointer" @click="toggleCheckoutDrawer(false)"></div>
+                
+                <!-- Drawer Header -->
+                <div class="px-6 pb-4 border-b border-white/5 flex items-center justify-between">
+                  <div>
+                    <h3 class="text-xl font-serif text-white">Sahkan Pesanan Anda</h3>
+                    <p class="text-xs text-gray-400 font-light">Sila isikan maklumat pesanan dengan lengkap</p>
+                  </div>
+                  <button @click="toggleCheckoutDrawer(false)" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:text-white flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+
+                <!-- Drawer Content -->
+                <div class="p-6 overflow-y-auto space-y-6 flex-1 text-left">
+                  <!-- Order Summary Checklist -->
+                  <div>
+                    <h4 class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-3">Sebut Harga (Ringkasan)</h4>
+                    <div class="divide-y divide-white/5 max-h-40 overflow-y-auto pr-1 bg-black/30 p-3 rounded-[6px]">
+                      <div v-for="cItem in cart" :key="cItem.id" class="py-2.5 flex flex-col gap-1">
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-2.5">
+                            <span class="text-[10px] font-black text-lime-500 bg-lime-500/10 border border-lime-500/20 px-2 py-0.5 rounded-[4px]">
+                              {{ cItem.quantity }}x
+                            </span>
+                            <span class="text-xs font-semibold text-white">{{ cItem.name }}</span>
+                          </div>
+                          <span class="text-xs font-bold text-gray-300">
+                            RM {{ (calculateDiscountedPrice(cItem.price, cItem.discount) * cItem.quantity).toFixed(2) }}
+                          </span>
+                        </div>
+                        <div v-if="cItem.allowRemarks && cItem.remark" class="pl-8 text-[11px] text-gray-500 italic">
+                          Catatan: "{{ cItem.remark }}"
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Delivery/Pickup Segment -->
+                  <div>
+                    <h4 class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-3">Pilihan Penerimaan</h4>
+                    <div class="grid grid-cols-2 gap-3 p-1 bg-obsidian-950 rounded-[8px] border border-white/5">
+                      <button @click="checkoutForm.deliveryMode = 'delivery'" class="py-2.5 text-xs font-bold uppercase tracking-wider rounded-[6px] transition-all"
+                        :class="checkoutForm.deliveryMode === 'delivery' ? 'bg-lime-500 text-black' : 'text-gray-400 hover:text-white'">
+                        <i class="fas fa-truck mr-1.5"></i> COD
+                      </button>
+                      <button @click="checkoutForm.deliveryMode = 'pickup'" class="py-2.5 text-xs font-bold uppercase tracking-wider rounded-[6px] transition-all"
+                        :class="checkoutForm.deliveryMode === 'pickup' ? 'bg-lime-500 text-black' : 'text-gray-400 hover:text-white'">
+                        <i class="fas fa-store mr-1.5"></i> Pick-up
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Checkout Form Fields -->
+                  <div class="space-y-4">
+                    <!-- Name & Phone (Auto-saved via localStorage) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1">Nama Penerima *</label>
+                        <input type="text" v-model="checkoutForm.name" placeholder="cth. Ahmad Fauzi"
+                          class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+                      </div>
+                      <div>
+                        <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1">No. Telefon *</label>
+                        <input type="text" v-model="checkoutForm.phone" placeholder="cth. 0123456789"
+                          class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+                      </div>
+                    </div>
+
+                    <!-- Address & Section Choices for COD -->
+                    <div v-if="checkoutForm.deliveryMode === 'delivery'" class="space-y-4">
+                      <div>
+                        <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-2">Pilihan Fasa (Bandar Lagenda) *</label>
+                        <div class="grid grid-cols-3 gap-2">
+                          <button v-for="f in ['Fasa 1', 'Fasa 2', 'Fasa 3']" :key="f" type="button" @click="checkoutForm.section = f"
+                            class="py-2.5 rounded-[4px] border text-xs font-bold uppercase tracking-wider transition-all"
+                            :class="checkoutForm.section === f 
+                              ? 'bg-lime-500 text-black border-lime-500' 
+                              : 'bg-obsidian-950 text-gray-300 border-white/5 hover:border-white/10'">
+                            {{ f }}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1">Alamat Rumah Lengkap *</label>
+                        <textarea v-model="checkoutForm.address" placeholder="cth. No 12, Lorong Lagenda 91" rows="2"
+                          class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required></textarea>
+                      </div>
+                    </div>
+
+                    <!-- Payment Mode -->
+                    <div>
+                      <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-2">Pilihan Cara Pembayaran *</label>
+                      <div class="grid grid-cols-2 gap-3">
+                        <button type="button" @click="checkoutForm.paymentMode = 'QR'" 
+                          class="py-3 px-4 rounded-[8px] border text-xs font-bold tracking-widest uppercase transition-all flex flex-col items-center justify-center gap-1.5 focus:outline-none"
+                          :class="checkoutForm.paymentMode === 'QR' ? 'bg-lime-500 text-black border-lime-500' : 'bg-obsidian-950 text-gray-300 border-white/5 hover:border-white/10'">
+                          <i class="fas fa-qrcode text-lg"></i>
+                          <span>DuitNow QR</span>
+                        </button>
+                        <button type="button" @click="checkoutForm.paymentMode = 'Tunai/Cash'" 
+                          class="py-3 px-4 rounded-[8px] border text-xs font-bold tracking-widest uppercase transition-all flex flex-col items-center justify-center gap-1.5 focus:outline-none"
+                          :class="checkoutForm.paymentMode === 'Tunai/Cash' ? 'bg-lime-500 text-black border-lime-500' : 'bg-obsidian-950 text-gray-300 border-white/5 hover:border-white/10'">
+                          <i class="fas fa-money-bill-wave text-lg"></i>
+                          <span>Tunai (COD)</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Checkout Receipt Details -->
+                  <div class="bg-black/30 p-4 border border-white/5 rounded-[8px] space-y-2 text-xs">
+                    <div class="flex justify-between text-gray-400">
+                      <span>Subtotal Bakul</span>
+                      <span class="font-bold text-white">RM {{ cartSubtotal.toFixed(2) }}</span>
+                    </div>
+                    <div v-if="checkoutForm.deliveryMode === 'delivery'" class="flex justify-between text-gray-400">
+                      <span>Caj Penghantaran (COD)</span>
+                      <span class="font-bold text-white">RM {{ parseFloat(storeSettings.codCharge || 1.00).toFixed(2) }}</span>
+                    </div>
+                    <hr class="border-white/5 my-2">
+                    <div class="flex justify-between items-baseline text-sm">
+                      <span class="font-bold uppercase tracking-widest text-gray-300">Total Keseluruhan</span>
+                      <span class="text-xl font-black text-lime-500">RM {{ finalGrandTotal.toFixed(2) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Footer Trigger Submit -->
+                <div class="p-6 border-t border-white/5 bg-obsidian-950">
+                  <button @click="submitOrderToWhatsApp" :disabled="!isCheckoutFormValid"
+                    class="w-full py-4 rounded-[8px] bg-lime-500 hover:bg-lime-400 disabled:opacity-30 disabled:cursor-not-allowed text-black font-black uppercase text-xs tracking-widest transition duration-300 flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-lg"></i>
+                    <span>Sahkan & Hantar ke WhatsApp</span>
+                  </button>
+                  <p class="text-[9px] text-center text-gray-500 mt-3 uppercase tracking-wider">
+                    Sistem akan membuka aplikasi WhatsApp untuk melengkapkan tempahan anda
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </transition>
+        </div>
+
+
+        <!-- ==================== ADMINISTRATIVE PORTAL ==================== -->
+        <div v-else>
+          
+          <!-- ADMIN LOGIN SCREEN -->
+          <div v-if="!adminUser" class="max-w-md mx-auto py-16">
+            <div class="glass-panel p-8 rounded-[8px] border border-white/5 shadow-2xl text-center">
+              <div class="w-16 h-16 rounded-[8px] bg-lime-500/10 border border-lime-500/20 text-lime-500 flex items-center justify-center mx-auto mb-6 text-2xl">
+                <i class="fas fa-shield-halved animate-pulse"></i>
+              </div>
+              <h3 class="text-2xl font-serif text-white mb-1">Owner Management</h3>
+              <p class="text-xs text-gray-500 uppercase tracking-widest mb-6">Secured Database Portal</p>
+              
+              <form @submit.prevent="loginAdmin" class="space-y-4 text-left">
+                <div>
+                  <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">E-Mail Address</label>
+                  <input type="email" v-model="adminForm.email" placeholder="admin@homekitchen.com" 
+                    class="w-full px-4 py-3 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+                </div>
+                <div>
+                  <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Secret Password</label>
+                  <input type="password" v-model="adminForm.password" placeholder="••••••••" 
+                    class="w-full px-4 py-3 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+                </div>
+                
+                <div v-if="authError" class="p-3 bg-red-950/40 border border-red-800/20 text-red-400 rounded-[4px] text-xs">
+                  {{ authError }}
+                </div>
+
+                <button type="submit" :disabled="adminLoggingIn"
+                  class="w-full py-3.5 rounded-[4px] bg-lime-500 hover:bg-lime-400 disabled:opacity-50 text-black font-bold uppercase text-xs tracking-widest transition duration-300">
+                  {{ adminLoggingIn ? 'Verifying Credentials...' : 'Sign In Portal' }}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- ADMIN DASHBOARD PANEL -->
+          <div v-else class="space-y-8">
+            <!-- Header Status -->
+            <div class="glass-panel rounded-[8px] border border-white/5 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-[8px] bg-lime-500/10 border border-lime-500/20 text-lime-500 flex items-center justify-center text-xl">
+                  <i class="fas fa-unlock-alt"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-serif text-white">Console Control</h3>
+                  <p class="text-xs text-gray-500 font-medium">Logged in as: <span class="text-lime-500">{{ adminUser.email }}</span></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <button @click="openAdminFeedbackModal" class="relative px-4 py-2.5 text-xs font-bold border border-white/10 text-white hover:border-lime-500/50 bg-white/5 rounded-[8px] transition duration-300 flex items-center gap-1.5">
+                  <i class="fas fa-comments text-lime-500"></i>
+                  <span>Feedbacks</span>
+                  <span v-if="unreadFeedbackCount > 0" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white font-extrabold text-[9px] w-4.5 h-4.5 flex items-center justify-center rounded-full shadow-md">
+                    {{ unreadFeedbackCount }}
+                  </span>
+                </button>
+                <button @click="logoutAdmin" class="px-4 py-2.5 text-xs font-bold border border-red-500/20 text-red-400 hover:bg-red-500/5 rounded-[8px] transition duration-300 flex items-center gap-1.5">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Keluar</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab Switchers -->
+            <div class="flex border-b border-white/5 gap-6 overflow-x-auto scrollbar-none">
+              <button @click="adminSubTab = 'settings'" class="pb-3 text-xs font-black uppercase tracking-widest transition-all relative"
+                :class="adminSubTab === 'settings' ? 'text-lime-500 border-b-2 border-lime-500' : 'text-gray-500 hover:text-white'">
+                <i class="fas fa-sliders-h mr-2"></i> Konfigurasi Kedai
+              </button>
+              <button @click="adminSubTab = 'menu'" class="pb-3 text-xs font-black uppercase tracking-widest transition-all relative"
+                :class="adminSubTab === 'menu' ? 'text-lime-500 border-b-2 border-lime-500' : 'text-gray-500 hover:text-white'">
+                <i class="fas fa-utensils mr-2"></i> Pengurusan Menu & Stok
+              </button>
+              <button @click="adminSubTab = 'reports'" class="pb-3 text-xs font-black uppercase tracking-widest transition-all relative"
+                :class="adminSubTab === 'reports' ? 'text-lime-500 border-b-2 border-lime-500' : 'text-gray-500 hover:text-white'">
+                <i class="fas fa-chart-line mr-2"></i> Laporan Jualan
+              </button>
+            </div>
+
+            <!-- TAB CONTENT: STORE SETTINGS -->
+            <div v-if="adminSubTab === 'settings'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <div class="glass-panel p-6 rounded-[8px] border border-white/5 space-y-6">
+                <div>
+                  <h4 class="text-sm font-bold uppercase tracking-widest text-lime-500 mb-1">Kawalan Operasi Utama</h4>
+                  <p class="text-xs text-gray-500">Kawal override status operasi waktu makan dengan pantas.</p>
+                </div>
+
+                <div class="bg-black/40 p-4 rounded-[8px] border border-white/5 flex items-center justify-between">
+                  <div>
+                    <h5 class="text-xs font-bold text-red-500 uppercase tracking-wider mb-0.5">Force Switch Override</h5>
+                    <p class="text-[10px] text-gray-500">Tukar paksa status buka/tutup secara manual.</p>
+                  </div>
+                  <button @click="toggleEmergencyOverride" class="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[4px] transition-all"
+                    :class="storeSettings.manualOverride === 'OPEN' ? 'bg-lime-500 text-black' : 'bg-red-600 text-white'">
+                    {{ storeSettings.manualOverride === 'OPEN' ? 'Force OPEN' : 'Force Close' }}
+                  </button>
+                </div>
+
+                <!-- Active Indicator -->
+                <div class="p-4 bg-black/20 rounded-[8px] border border-white/5 flex items-center justify-between">
+                  <div>
+                    <span class="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Realtime Store Status:</span>
+                    <h5 class="text-xs font-bold uppercase tracking-wider mt-0.5" :class="isStoreOpen ? 'text-lime-500' : 'text-red-500'">
+                      {{ isStoreOpen ? 'ONLINE (Accepting Customer Orders)' : 'OFFLINE (Orders Blocked)' }}
+                    </h5>
+                  </div>
+                  <div class="w-3 h-3 rounded-full" :class="isStoreOpen ? 'bg-lime-500 animate-pulse' : 'bg-red-500'"></div>
+                </div>
+
+                <!-- Hero Slider Manager -->
+                <div class="border-t border-white/5 pt-6 space-y-4">
+                  <div>
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-gray-300">Pautan Gambar Hero Slider</h4>
+                    <p class="text-[11px] text-gray-500 mt-1">Masukkan URL Firebase Storage untuk gambar latar belakang hero.</p>
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <div v-for="(image, idx) in storeSettings.heroImages" :key="idx" class="flex gap-2 items-center bg-black/40 p-2 rounded-[4px]">
+                      <div class="w-10 h-10 rounded bg-obsidian-900 overflow-hidden shrink-0 border border-white/5">
+                        <img :src="image" class="w-full h-full object-cover" @error="handleImageError">
+                      </div>
+                      <input type="text" v-model="storeSettings.heroImages[idx]" @change="saveStoreSettings"
+                        placeholder="Pautan URL gambar..." 
+                        class="flex-1 px-3 py-1.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition">
+                      <button @click="removeHeroImageRow(idx)" class="text-red-500 hover:text-red-400 p-2 shrink-0">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+
+                    <button @click="addHeroImageRow" class="text-xs text-lime-500 font-black uppercase tracking-widest hover:underline flex items-center gap-1.5 mt-2">
+                      <i class="fas fa-plus-circle"></i> Tambah Gambar
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="settingsSaving" class="text-xs font-semibold text-lime-500 text-center animate-pulse">
+                  <i class="fas fa-spinner animate-spin mr-1"></i> Saving updates to cloud server...
+                </div>
+              </div>
+
+              <!-- Right configurations -->
+              <div class="glass-panel p-6 rounded-[8px] border border-white/5 space-y-5 text-left">
+                <h4 class="text-sm font-bold uppercase tracking-widest text-lime-500">Waktu & Caj Operasi</h4>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Jam Buka *</label>
+                    <select v-model="storeSettings.openHour" @change="saveStoreSettings" 
+                      class="w-full px-3 py-2 bg-obsidian-950 border border-white/5 rounded-[4px] text-xs text-white cursor-pointer outline-none focus:border-lime-500">
+                      <option v-for="h in 24" :value="h - 1">{{ formatHour(h - 1) }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Jam Tutup *</label>
+                    <select v-model="storeSettings.closeHour" @change="saveStoreSettings" 
+                      class="w-full px-3 py-2 bg-obsidian-950 border border-white/5 rounded-[4px] text-xs text-white cursor-pointer outline-none focus:border-lime-500">
+                      <option v-for="h in 24" :value="h - 1">{{ formatHour(h - 1) }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Hari Cuti Berjadual *</label>
+                  <select v-model="storeSettings.offDay" @change="saveStoreSettings" 
+                    class="w-full px-3 py-2 bg-obsidian-950 border border-white/5 rounded-[4px] text-xs text-white cursor-pointer outline-none focus:border-lime-500">
+                    <option value="">Tiada (Beroperasi Setiap Hari)</option>
+                    <option :value="1">Isnin (Monday)</option>
+                    <option :value="2">Selasa (Tuesday)</option>
+                    <option :value="3">Rabu (Wednesday)</option>
+                    <option :value="4">Khamis (Thursday)</option>
+                    <option :value="5">Jumaat (Friday)</option>
+                    <option :value="6">Sabtu (Saturday)</option>
+                    <option :value="0">Ahad (Sunday)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Default Caj COD (RM) *</label>
+                  <input type="number" step="0.1" v-model.number="storeSettings.codCharge" @change="saveStoreSettings"
+                    class="w-full px-3 py-2 bg-obsidian-950 border border-white/5 rounded-[4px] text-xs text-white outline-none focus:border-lime-500">
+                </div>
+
+                <div class="p-3 bg-lime-500/5 border border-lime-500/20 text-lime-400 rounded-[4px] text-[10px] leading-relaxed flex gap-2">
+                  <i class="fas fa-circle-info text-base shrink-0"></i>
+                  <span>Sebarang perubahan yang dilakukan akan dipaparkan secara langsung pada antara muka pelanggan sekelip mata.</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- TAB CONTENT: MENU CRUD MANAGEMENT -->
+            <div v-if="adminSubTab === 'menu'" class="space-y-6">
+              
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-obsidian-900 p-4 border border-white/5 rounded-[8px]">
+                <div>
+                  <h4 class="text-sm font-bold uppercase tracking-widest text-lime-500">Pengurusan Items Menu</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Tambah dan selenggara hidangan menu yang dipasarkan.</p>
+                </div>
+                <button @click="openMenuFormModal(null)" class="py-2.5 px-4 rounded-[4px] bg-lime-500 hover:bg-lime-400 text-black font-bold uppercase text-xs tracking-widest transition-all flex items-center gap-1.5 justify-center">
+                  <i class="fas fa-plus"></i>
+                  <span>Tambah Item Baru</span>
+                </button>
+              </div>
+
+              <!-- Empty Menu State -->
+              <div v-if="menuItems.length === 0" class="text-center py-20 bg-obsidian-900 border border-dashed border-white/10 rounded-[8px]">
+                <p class="text-xs text-gray-500 uppercase tracking-widest">Tiada Menu Rekod Dikesan</p>
+              </div>
+
+              <!-- Premium Table Grid List -->
+              <div v-else class="glass-panel rounded-[8px] border border-white/5 overflow-hidden">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="bg-black/40 text-[9px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
+                        <th class="py-4 px-6">Hidangan</th>
+                        <th class="py-4 px-4 text-center">Harga & Diskaun</th>
+                        <th class="py-4 px-4 text-center">Peringkat Rank</th>
+                        <th class="py-4 px-4 text-center">Status Stok</th>
+                        <th class="py-4 px-4 text-center">Hebahan</th>
+                        <th class="py-4 px-6 text-right">Tindakan</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5 text-xs text-gray-300">
+                      <tr v-for="(item, index) in menuItems" :key="item.id" class="hover:bg-white/5 transition duration-150">
+                        
+                        <!-- Name with image -->
+                        <td class="py-4 px-6 flex items-center gap-3">
+                          <img :src="item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&auto=format&fit=crop&q=80'" 
+                            class="w-12 h-12 rounded-[4px] object-cover border border-white/5">
+                          <div>
+                            <span class="block font-bold text-white">{{ item.name }}</span>
+                            <span class="block text-[9px] text-gray-500 mt-0.5 line-clamp-1">{{ item.description || 'Tiada deskripsi.' }}</span>
+                            <div class="flex flex-wrap gap-1 mt-1.5 items-center">
+                              <span class="bg-lime-500/10 border border-lime-500/20 text-lime-500 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                {{ item.category || 'LAIN' }}
+                              </span>
+                              <span v-if="item.isBestSeller" class="bg-white/10 text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                BEST SELLER
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Price -->
+                        <td class="py-4 px-4 text-center">
+                          <div class="inline-flex flex-col items-center">
+                            <span class="text-xs font-bold text-lime-500">RM {{ calculateDiscountedPrice(item.price, item.discount).toFixed(2) }}</span>
+                            <span v-if="item.discount > 0" class="text-[9px] text-gray-500 line-through">RM {{ parseFloat(item.price).toFixed(2) }}</span>
+                          </div>
+                        </td>
+
+                        <!-- Rank -->
+                        <td class="py-4 px-4 text-center">
+                          <div class="inline-flex items-center gap-1.5">
+                            <button @click="changeItemRank(index, 'up')" :disabled="index === 0" class="w-6 h-6 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-gray-400 hover:text-white text-xs">
+                              <i class="fas fa-chevron-up"></i>
+                            </button>
+                            <span class="text-xs font-bold text-gray-500">{{ item.rank || 0 }}</span>
+                            <button @click="changeItemRank(index, 'down')" :disabled="index === menuItems.length - 1" class="w-6 h-6 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-gray-400 hover:text-white text-xs">
+                              <i class="fas fa-chevron-down"></i>
+                            </button>
+                          </div>
+                        </td>
+
+                        <!-- Sold Status -->
+                        <td class="py-4 px-4 text-center">
+                          <button @click="toggleSoldStatus(item)" class="px-2.5 py-1 rounded-[4px] text-[10px] font-black uppercase tracking-wider"
+                            :class="item.isSoldOut ? 'bg-red-950 text-red-500 border border-red-800/20' : 'bg-lime-500/10 text-lime-500 border border-lime-500/20'">
+                            {{ item.isSoldOut ? 'Habis' : 'Ada Stok' }}
+                          </button>
+                        </td>
+
+                        <!-- Visibility status -->
+                        <td class="py-4 px-4 text-center">
+                          <button @click="toggleItemVisibility(item)" class="px-2.5 py-1 rounded-[4px] text-[10px] font-black uppercase tracking-wider"
+                            :class="item.isHidden ? 'bg-white/5 text-gray-500' : 'bg-lime-500/10 text-lime-500 border border-lime-500/20'">
+                            {{ item.isHidden ? 'Sembunyi' : 'Hebah' }}
+                          </button>
+                        </td>
+
+                        <!-- CRUD Triggers -->
+                        <td class="py-4 px-6 text-right">
+                          <div class="inline-flex gap-2">
+                            <button @click="openMenuFormModal(item)" class="w-8 h-8 rounded bg-white/5 hover:bg-lime-500 hover:text-black flex items-center justify-center text-xs border border-white/5">
+                              <i class="fas fa-edit"></i>
+                            </button>
+                            <button @click="deleteItemConfirm(item)" class="w-8 h-8 rounded bg-red-950 hover:bg-red-900 text-red-500 hover:text-white flex items-center justify-center text-xs border border-red-500/20">
+                              <i class="fas fa-trash-alt"></i>
+                            </button>
+                          </div>
+                        </td>
+
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- TAB CONTENT: SALES REPORTS -->
+            <div v-if="adminSubTab === 'reports'" class="space-y-6">
+              
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="glass-panel p-6 rounded-[8px] border border-white/5 flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-[8px] bg-lime-500/10 border border-lime-500/20 text-lime-500 flex items-center justify-center text-lg">
+                    <i class="fas fa-wallet"></i>
+                  </div>
+                  <div>
+                    <span class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest">Jualan Hari Ini</span>
+                    <h3 class="text-2xl font-serif text-white mt-0.5">RM {{ todaySalesStats.revenue.toFixed(2) }}</h3>
+                  </div>
+                </div>
+                <div class="glass-panel p-6 rounded-[8px] border border-white/5 flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-[8px] bg-lime-500/10 border border-lime-500/20 text-lime-500 flex items-center justify-center text-lg">
+                    <i class="fas fa-shopping-cart"></i>
+                  </div>
+                  <div>
+                    <span class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest">Pesanan Hari Ini</span>
+                    <h3 class="text-2xl font-serif text-white mt-0.5">{{ todaySalesStats.orders }} Pesanan</h3>
+                  </div>
+                </div>
+                <div class="glass-panel p-6 rounded-[8px] border border-white/5 flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-[8px] bg-lime-500/10 border border-lime-500/20 text-lime-500 flex items-center justify-center text-lg">
+                    <i class="fas fa-calculator"></i>
+                  </div>
+                  <div>
+                    <span class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest">Purata Tempahan</span>
+                    <h3 class="text-2xl font-serif text-white mt-0.5">RM {{ todaySalesStats.avg.toFixed(2) }}</h3>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sales logs logs -->
+              <div class="glass-panel rounded-[8px] border border-white/5 overflow-hidden">
+                <div class="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-black/40">
+                  <h4 class="text-xs font-bold uppercase tracking-widest text-gray-300">Log Tempahan (Realtime)</h4>
+                  <button @click="clearSalesLogs" class="text-xs text-red-400 hover:text-red-300 font-bold flex items-center gap-1.5 uppercase tracking-wider">
+                    <i class="fas fa-trash-alt"></i> Padam Semua Log
+                  </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="bg-black/20 text-[9px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
+                        <th class="py-4 px-6">Tarikh & Masa</th>
+                        <th class="py-4 px-4 text-center">Kuantiti Item</th>
+                        <th class="py-4 px-6 text-right">Bayaran Penuh</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5 text-xs text-gray-300">
+                      <tr v-for="log in salesLogs" :key="log.id" class="hover:bg-white/5 transition">
+                        <td class="py-4 px-6 font-light text-gray-400">{{ formatTimestamp(log.timestamp) }}</td>
+                        <td class="py-4 px-4 text-center font-bold text-lime-500">{{ log.itemsCount }} unit</td>
+                        <td class="py-4 px-6 text-right text-white font-bold">RM {{ parseFloat(log.amount || 0).toFixed(2) }}</td>
+                      </tr>
+                      <tr v-if="salesLogs.length === 0">
+                        <td colspan="3" class="py-12 text-center text-gray-500 uppercase tracking-widest">Tiada rekod data jualan terkini.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- LIGHTBOX PREVIEW MODAL -->
+    <transition enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95">
+      <div v-if="activeLightbox" class="fixed inset-0 bg-black/95 backdrop-blur z-[60] flex items-center justify-center p-4" @click="closeLightbox">
+        <div class="relative max-w-3xl w-full bg-obsidian-900 border border-white/5 rounded-[8px] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[85vh]" @click.stop>
+          <button @click="closeLightbox" class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-black/80">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div class="w-full md:w-3/5 bg-black flex items-center justify-center overflow-hidden">
+            <img :src="activeLightbox.url" class="w-full h-full object-cover">
+          </div>
+          
+          <div class="w-full md:w-2/5 p-8 flex flex-col justify-between text-left text-white bg-obsidian-900">
+            <div>
+              <h4 class="text-2xl font-serif mb-4">{{ activeLightbox.title }}</h4>
+              <p class="text-xs text-gray-400 font-light leading-relaxed">{{ activeLightbox.desc || 'Tiada maklumat tambahan dijumpai.' }}</p>
+            </div>
+            <button @click="closeLightbox" class="w-full mt-8 py-3 rounded-[4px] bg-lime-500 hover:bg-lime-400 text-black text-xs font-bold uppercase tracking-widest transition">
+              Tutup Paparan
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- CUSTOMER FEEDBACK MODAL -->
+    <transition enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0">
+      <div v-if="showFeedbackModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md rounded-[8px] shadow-2xl overflow-hidden border border-white/10">
+          <div class="px-6 py-5 border-b border-white/5 flex items-center justify-between bg-black/40">
+            <h3 class="text-lg font-serif text-white flex items-center gap-2">
+              <i class="far fa-comment-dots text-lime-500"></i>
+              <span>Peti Cadangan & Maklum Balas</span>
+            </h3>
+            <button @click="closeFeedbackModal" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:text-white flex items-center justify-center">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <form @submit.prevent="submitFeedback" class="p-6 space-y-4 text-left">
+            <p class="text-xs text-gray-400 font-light leading-relaxed">
+              Dapur kami sentiasa komited untuk memberikan rasa terbaik. Sila tulis sebarang cadangan, idea, atau maklum balas anda di bawah.
+            </p>
+            <div>
+              <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Cadangan / Maklum Balas Anda *</label>
+              <textarea v-model="feedbackComment" placeholder="Taip disini maklumbalas, cadangan dan pandangan anda..." rows="4" maxlength="500"
+                class="w-full px-4 py-3 rounded-[4px] glass-input text-xs text-white outline-none focus:ring-0 transition resize-none" required></textarea>
+              <div class="text-right text-[9px] text-gray-500 mt-1">
+                {{ feedbackComment.length }}/500 aksara
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-white/5 flex items-center justify-end gap-3 -mx-6 -mb-6 p-6 bg-black/40">
+              <button type="button" @click="closeFeedbackModal" class="px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white">
+                Batal
+              </button>
+              <button type="submit" :disabled="feedbackSaving"
+                class="px-5 py-2.5 rounded-[4px] bg-lime-500 hover:bg-lime-400 text-black text-xs font-bold uppercase tracking-widest transition disabled:opacity-50 flex items-center gap-2">
+                <i v-if="feedbackSaving" class="fas fa-spinner animate-spin"></i>
+                <span>Hantar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </transition>
+
+    <!-- ADMIN MODAL: VIEW FEEDBACKS -->
+    <transition enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95">
+      <div v-if="showAdminFeedbackModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-lg rounded-[8px] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col border border-white/10">
+          <div class="px-6 py-5 border-b border-white/5 flex items-center justify-between bg-black/40">
+            <div>
+              <h3 class="text-lg font-serif text-white">Feedback Storage</h3>
+              <p class="text-xs text-gray-500">Ulasan dan idea dari para pelanggan</p>
+            </div>
+            <button @click="showAdminFeedbackModal = false" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:text-white flex items-center justify-center">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="p-6 overflow-y-auto space-y-4 flex-1">
+            <div v-if="feedbacks.length === 0" class="text-center py-12 text-gray-500 uppercase tracking-wider text-xs">
+              Tiada feedback dikesan.
+            </div>
+            <div v-else class="space-y-3">
+              <div v-for="fb in feedbacks" :key="fb.id" @click="markFeedbackAsRead(fb)"
+                class="p-4 rounded-[4px] border transition duration-150 relative text-left cursor-pointer group"
+                :class="fb.isRead ? 'bg-black/20 border-white/5' : 'bg-lime-500/5 border-lime-500/20'">
+                <span v-if="!fb.isRead" class="absolute top-4 right-4 w-2 h-2 rounded-full bg-lime-500"></span>
+                <p class="text-xs text-gray-300 leading-relaxed pr-6">{{ fb.comment }}</p>
+                
+                <div class="mt-3 flex items-center justify-between text-[10px] text-gray-500 font-bold uppercase tracking-wider border-t border-white/5 pt-2">
+                  <span>{{ formatTimestamp(fb.createdAt) }}</span>
+                  <button @click.stop="deleteFeedback(fb.id)" class="text-red-400 hover:text-red-500">
+                    <i class="fas fa-trash-alt"></i> Padam
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 border-t border-white/5 bg-black/40 flex justify-end">
+            <button @click="showAdminFeedbackModal = false" class="px-5 py-2 text-xs font-bold uppercase tracking-widest bg-lime-500 text-black hover:bg-lime-400 rounded-[4px]">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- FORM MODAL: ADD/EDIT MENU -->
+    <transition enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0">
+      <div v-if="showMenuFormModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-lg rounded-[8px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-white/10">
+          <div class="px-6 py-5 border-b border-white/5 flex items-center justify-between bg-black/40">
+            <h3 class="text-lg font-serif text-white">
+              {{ editingItem ? 'Kemaskini Menu Hidangan' : 'Tambah Menu Hidangan Baru' }}
+            </h3>
+            <button @click="closeMenuFormModal" class="w-8 h-8 rounded-full bg-white/5 text-gray-400 hover:text-white flex items-center justify-center">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <form @submit.prevent="saveMenuItem" class="p-6 space-y-4 overflow-y-auto flex-1 text-left">
+            <div>
+              <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Nama Hidangan *</label>
+              <input type="text" v-model="menuForm.name" placeholder="cth. Nasi Lemak Sambal Sotong" 
+                class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+            </div>
+
+            <div>
+              <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Kategori / Kelas Hidangan *</label>
+              <input type="text" v-model="menuForm.category" placeholder="cth. Makanan, Minuman, Pencuci Mulut, Sampingan" 
+                class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+            </div>
+
+            <div>
+              <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Huraian Ringkas</label>
+              <textarea v-model="menuForm.description" placeholder="Deskripsi ringkas hidangan..." rows="2"
+                class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Harga Asal (RM) *</label>
+                <input type="number" step="0.01" min="0" v-model.number="menuForm.price" placeholder="8.50" 
+                  class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+              </div>
+              <div>
+                <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Diskaun (%)</label>
+                <input type="number" min="0" max="100" v-model.number="menuForm.discount" placeholder="0" 
+                  class="w-full px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition">
+              </div>
+            </div>
+
+            <!-- Variasi -->
+            <div class="border-t border-white/5 pt-4">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest">Variasi / Pilihan Hidangan</label>
+                <button type="button" @click="addVariantRow" class="text-xs text-lime-500 font-bold hover:underline flex items-center gap-1">
+                  <i class="fas fa-plus-circle"></i> Tambah Variasi
+                </button>
+              </div>
+              <div class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                <div v-for="(v, vIdx) in menuForm.variants" :key="vIdx" class="flex gap-2 items-center bg-black/40 p-2 rounded-[4px]">
+                  <input type="text" v-model="v.name" placeholder="cth. Biasa / Pedas" 
+                    class="flex-1 px-3 py-1.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+                  <div class="relative w-24 shrink-0">
+                    <span class="absolute left-2 top-2 text-[10px] text-gray-500">±RM</span>
+                    <input type="number" step="0.01" v-model.number="v.priceAdjustment" placeholder="0.00" 
+                      class="w-full pl-8 pr-2 py-1.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+                  </div>
+                  <button type="button" @click="v.isSoldOut = !v.isSoldOut"
+                    class="w-8 h-8 rounded-[4px] flex items-center justify-center text-xs border transition shrink-0"
+                    :class="v.isSoldOut ? 'bg-red-950 text-red-500 border-red-800/20' : 'bg-lime-500/10 text-lime-500 border-lime-500/20'">
+                    <i class="fas" :class="v.isSoldOut ? 'fa-lock' : 'fa-lock-open'"></i>
+                  </button>
+                  <button type="button" @click="removeVariantRow(vIdx)" class="text-red-500 hover:text-red-400 p-1 shrink-0">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Image URL with Live Image Generation -->
+            <div>
+              <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">URL Gambar Hidangan *</label>
+              <div class="flex gap-2">
+                <input type="text" v-model="menuForm.image" placeholder="https://unsplash.com/..." 
+                  class="flex-1 px-4 py-2.5 rounded-[4px] glass-input text-xs text-white focus:outline-none transition" required>
+                <button type="button" @click="generateImageForMenu" :disabled="imageGenerating"
+                  class="px-4 py-2.5 rounded-[4px] bg-white/5 border border-white/5 hover:border-lime-500/20 text-lime-500 hover:text-white text-xs font-bold uppercase tracking-widest transition flex items-center gap-1.5 disabled:opacity-50">
+                  <i class="fas" :class="imageGenerating ? 'fa-spinner animate-spin' : 'fa-wand-magic-sparkles'"></i>
+                  <span>Jana AI</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Previews -->
+            <div v-if="menuForm.image" class="relative aspect-video w-full rounded-[4px] bg-black/40 overflow-hidden border border-white/5">
+              <img :src="menuForm.image" class="w-full h-full object-cover">
+              <span class="absolute top-2 left-2 px-2.5 py-0.5 rounded bg-black/75 border border-white/10 text-[8px] font-bold uppercase tracking-widest text-lime-500">PRATONTON</span>
+            </div>
+
+            <!-- Flags -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+              <label v-for="flag in [
+                { id: 'isSoldOut', label: 'Habis Stok?' },
+                { id: 'isHidden', label: 'Sembunyikan?' },
+                { id: 'allowRemarks', label: 'Benar Nota?' },
+                { id: 'isBestSeller', label: 'Paling Laris?' },
+                { id: 'isRecommended', label: 'Disyorkan?' }
+              ]" :key="flag.id" class="flex items-center gap-2 cursor-pointer bg-black/30 p-2 border border-white/5 rounded-[4px]">
+                <input type="checkbox" v-model="menuForm[flag.id]" class="w-4 h-4 rounded text-lime-500 focus:ring-0 bg-black/40 border-white/10">
+                <span class="text-[10px] font-black uppercase tracking-wider text-gray-300">{{ flag.label }}</span>
+              </label>
+            </div>
+
+            <div class="pt-4 border-t border-white/5 flex items-center justify-end gap-3 bg-black/40 -mx-6 -mb-6 p-6">
+              <button type="button" @click="closeMenuFormModal" class="px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white">
+                Batal
+              </button>
+              <button type="submit" :disabled="menuItemSaving"
+                class="px-5 py-2.5 rounded-[4px] bg-lime-500 hover:bg-lime-400 text-black text-xs font-bold uppercase tracking-widest transition disabled:opacity-50">
+                {{ menuItemSaving ? 'Menyimpan...' : 'Simpan Hidangan' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </transition>
+
+    <!-- CONFIRM DELETE DIALOG -->
+    <transition enter-active-class="transition duration-200 ease-out"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95">
+      <div v-if="deleteConfirmTarget" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-[8px] max-w-sm w-full text-center border border-white/10 shadow-2xl">
+          <div class="w-12 h-12 rounded-full bg-red-950 border border-red-500/25 text-red-500 flex items-center justify-center mx-auto mb-4 text-xl">
+            <i class="fas fa-trash-alt"></i>
+          </div>
+          <h4 class="font-serif text-lg text-white mb-2">Padam Rekod Menu?</h4>
+          <p class="text-xs text-gray-400 mb-6 font-light">Adakah anda pasti untuk memadam item <span class="font-bold text-white">"{{ deleteConfirmTarget.name }}"</span>? Tindakan ini tidak boleh diundurkan.</p>
+          
+          <div class="flex items-center gap-3">
+            <button @click="deleteConfirmTarget = null" class="flex-1 py-2.5 rounded-[4px] border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 text-xs font-bold uppercase tracking-widest transition">
+              Batal
+            </button>
+            <button @click="executeDeleteItem" class="flex-1 py-2.5 rounded-[4px] bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-widest transition">
+              Ya, Padam
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- NOTIFICATION POPUP -->
+    <transition enter-active-class="transform transition duration-300 ease-out"
+                enter-from-class="translate-y-4 opacity-0 scale-95"
+                enter-to-class="translate-y-0 opacity-100 scale-100"
+                leave-active-class="transform transition duration-200 ease-in"
+                leave-from-class="translate-y-0 opacity-100 scale-100"
+                leave-to-transform="transform transition duration-400 ease-out">
+      <div v-if="notification" class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm px-4">
+        <div class="bg-obsidian-900 text-white border border-white/10 py-3.5 px-5 rounded-[8px] shadow-2xl flex items-center gap-3">
+          <i class="fas text-lg shrink-0" :class="[notification.type === 'success' ? 'fa-circle-check text-lime-500' : 'fa-circle-exclamation text-red-500']"></i>
+          <span class="text-xs font-bold uppercase tracking-wider">{{ notification.message }}</span>
+        </div>
+      </div>
+    </transition>
+
+  </div>
+
+  <!-- Footer Section -->
+  <footer class="w-full border-t border-white/5 bg-obsidian-950 py-10 theme-transition">
+    <div class="max-w-6xl mx-auto px-4 text-center space-y-4">
+      <h3 class="text-lg font-serif">Home <span class="italic font-light text-lime-500">Kitchen</span></h3>
+      <p class="text-xs text-gray-500 font-light max-w-sm mx-auto leading-relaxed">
+        Menggabungkan warisan tradisi rasa Nusantara dengan pengolahan premium bertaraf maestro masakan.
+      </p>
+      <p class="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em]">
+        &copy; 2026 Home Kitchen. Hak Cipta Terpelihara.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Vue 3 ESM Script -->
+  <script type="module">
+    import { createApp, ref, computed, onMounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    
+    // Import complete Firebase Services
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // Global variables provided by environment or default values
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'home-kitchen-ordering-app';
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2WND8hMjihfppAi42NuLDn1SCOpEPBuc",
+      authDomain: "iodigital-eb34a.firebaseapp.com",
+      projectId: "iodigital-eb34a",
+      storageBucket: "iodigital-eb34a.firebasestorage.app",
+      messagingSenderId: "504175274780",
+      appId: "1:504175274780:web:111d91df91691cfee728d9",
+      measurementId: "G-0HXTB4FXC2"
+    };
+
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
+
+    // Initialize Firebase Services
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Main Vue Application
+    createApp({
+      setup() {
+        // --- REFS & STATE MANAGEMENT ---
+        const loading = ref(true);
+        const isDarkMode = ref(true); // Default Premium state is Dark
+        const isAdminMode = ref(false);
+        const adminSubTab = ref('settings');
+        const adminUser = ref(null);
+        const viewMode = ref('grid');
+        
+        // Notification State
+        const notification = ref(null);
+        const triggerNotification = (message, type = 'success') => {
+          notification.value = { message, type };
+          setTimeout(() => {
+            notification.value = null;
+          }, 3500);
         };
 
-        // --- PEMBANTU ANALISIS KONTRAST SCANNER (DIDEFINISIKAN SEBELUM DIHOIST) ---
-        function getLuma(hex) {
-            const c = hex.substring(1);
-            const rgb = parseInt(c, 16);
-            const r = (rgb >> 16) & 0xff;
-            const g = (rgb >>  8) & 0xff;
-            const b = (rgb >>  0) & 0xff;
-            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        }
+        // UI Interactions
+        const activeLightbox = ref(null);
+        const isPopping = ref(null);
+        const jiggleCart = ref(false);
 
-        function isDarkColor(hex) {
-            return getLuma(hex) < 120;
-        }
+        // State Slider Index & Timer
+        const currentHeroIndex = ref(0);
+        let heroTimer = null;
 
-        function calculateSafety() {
-            let score = 99;
-            let label = "99% (Very Safe)";
-            let colorClass = "text-emerald-400";
-            let barGradient = "from-emerald-500 to-teal-400";
+        // Core business hours & settings state (Live from Firestore)
+        const storeSettings = ref({
+          openHour: 6,
+          closeHour: 18,
+          offDay: 5,
+          manualOverride: 'OPEN',
+          codCharge: 1.00,
+          heroImages: [
+            'https://firebasestorage.googleapis.com/v0/b/iodigital-eb34a.firebasestorage.app/o/Hero%2F4F5528E0-AB51-4094-9380-50AFFCAAE15B.png?alt=media&token=a395f205-f24b-44c0-812b-d89beb2a1f1f'
+          ]
+        });
+        const settingsSaving = ref(false);
 
-            if (customBgImg) {
-                score = 85;
-                label = "85% (Safe)";
-                colorClass = "text-emerald-400";
-                barGradient = "from-amber-400 to-emerald-400";
-            } else {
-                const fgLuma = getLuma(colorFgStart.value);
-                if (fgLuma < 55) {
-                    score = 35;
-                    label = "35% (Scanning Risk)";
-                    colorClass = "text-red-400";
-                    barGradient = "from-red-500 to-orange-500";
-                } else if (fgLuma < 120) {
-                    score = 75;
-                    label = "75% (Medium Contrast)";
-                    colorClass = "text-amber-400";
-                    barGradient = "from-orange-500 to-amber-500";
-                }
+        // Menu Database (Live loaded from Firestore)
+        const menuItems = ref([]);
+
+        // Customer selected variants mapping [itemId -> selectedVariantName]
+        const selectedVariants = ref({});
+
+        // Customer remarks state mapped [itemId -> remarkText]
+        const customerRemarks = ref({});
+
+        // Customer selected category filter
+        const selectedCategory = ref('Semua');
+
+        // Customer Cart and Checkout Form state
+        const cart = ref([]);
+        const showCheckoutDrawer = ref(false);
+        const checkoutForm = ref({
+          name: '',
+          phone: '',
+          deliveryMode: 'delivery',
+          address: '',
+          section: '',
+          paymentMode: ''
+        });
+
+        // Admin Auth Login Details
+        const adminForm = ref({ email: '', password: '' });
+        const adminLoggingIn = ref(false);
+        const authError = ref('');
+
+        // Admin Menu Item Form Modal and Editing State
+        const showMenuFormModal = ref(false);
+        const editingItem = ref(null);
+        const imageGenerating = ref(false);
+        const menuItemSaving = ref(false);
+        const deleteConfirmTarget = ref(null);
+        const menuForm = ref({
+          name: '',
+          category: '',
+          description: '',
+          price: 0,
+          discount: 0,
+          image: '',
+          isSoldOut: false,
+          isHidden: false,
+          allowRemarks: false,
+          isBestSeller: false,
+          isRecommended: false,
+          rank: 0,
+          variants: []
+        });
+
+        // New Feedback System States
+        const showFeedbackModal = ref(false);
+        const feedbackComment = ref('');
+        const feedbackSaving = ref(false);
+        const feedbacks = ref([]);
+        const showAdminFeedbackModal = ref(false);
+
+        // FAQs List Data
+        const activeFaqIndex = ref(null);
+        const faqs = [
+          { question: 'Adakah hidangan Home Kitchen disahkan Halal?', answer: 'Ya, 100% menggunakan bahan-bahan halal daripada pembekal Muslim tempatan serta dimasak dengan bersih.' },
+          { question: 'Berapakah radius COD dan kawasannya?', answer: 'Kami menyediakan penghantaran COD sekitar Bandar Lagenda Teluk Intan (Fasa 1, 2, dan 3) dengan caj penghantaran serendah RM 1.00.' },
+          { question: 'Bolehkah saya membuat tempahan awal (Pre-Order) untuk katering?', answer: 'Sangat dialukan! Sila hubungi kami terus melalui WhatsApp sekurang-kurangnya 2-3 hari lebih awal untuk perbincangan lanjut tentang menu katering anda.' },
+          { question: 'Bagaimanakah cara membuat pembayaran?', answer: 'Kami menerima pemindahan dalam talian / Kod QR DuitNow secara pantas dan juga pembayaran secara tunai (Cash on Delivery) semasa pesanan sampai.' }
+        ];
+        const toggleFaq = (index) => {
+          activeFaqIndex.value = activeFaqIndex.value === index ? null : index;
+        };
+
+        // Real-time Sales Logs State
+        const salesLogs = ref([]);
+
+        // Computed Stats for Daily Sales Reports
+        const todaySalesStats = computed(() => {
+          const now = new Date();
+          const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+          const klTime = new Date(utc + (3600000 * 8));
+          
+          const startOfToday = new Date(klTime.getFullYear(), klTime.getMonth(), klTime.getDate()).getTime();
+          
+          const todayLogs = salesLogs.value.filter(log => log.timestamp >= startOfToday);
+          const totalRevenue = todayLogs.reduce((sum, log) => sum + (parseFloat(log.amount) || 0), 0);
+          const totalOrders = todayLogs.length;
+          return {
+            revenue: totalRevenue,
+            orders: totalOrders,
+            avg: totalOrders ? (totalRevenue / totalOrders) : 0
+          };
+        });
+
+        // --- HERO SLIDER NAVIGATION ---
+        const startHeroTimer = () => {
+          stopHeroTimer();
+          heroTimer = setInterval(() => {
+            if (storeSettings.value.heroImages && storeSettings.value.heroImages.length > 0) {
+              currentHeroIndex.value = (currentHeroIndex.value + 1) % storeSettings.value.heroImages.length;
             }
+          }, 5000);
+        };
 
-            if (styleDots.value === 'diamond' && score > 50) {
-                score -= 10;
-                label = `${score}% (Safe)`;
-                colorClass = "text-amber-400";
-                barGradient = "from-orange-500 to-amber-400";
-            }
-            if (centerLogoImg && score > 50) {
-                score -= 5;
-                label = `${score}% (Safe)`;
-            }
+        const stopHeroTimer = () => {
+          if (heroTimer) {
+            clearInterval(heroTimer);
+            heroTimer = null;
+          }
+        };
 
-            const scoreDisplay = document.getElementById('safety-score');
-            const scoreBar = document.getElementById('safety-bar');
-            
-            if (scoreDisplay) {
-                scoreDisplay.innerText = label;
-                scoreDisplay.className = `font-bold ${colorClass}`;
-            }
-            if (scoreBar) {
-                scoreBar.style.width = `${score}%`;
-                scoreBar.className = `h-full bg-gradient-to-r ${barGradient} rounded-full transition-all duration-300`;
-            }
-        }
+        const resetHeroTimer = () => {
+          startHeroTimer();
+        };
 
-        // --- FIREBASE MANDATORY ENGINE & INTEGRASI AKTIF ---
-        let app, auth, db;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let currentUser = null;
-        let isAdmin = false;
+        // --- LOCAL STORAGE MEMORY PERSISTENCE ---
+        const saveUserDataToMemory = () => {
+          localStorage.setItem('hk_user_name', checkoutForm.value.name);
+          localStorage.setItem('hk_user_phone', checkoutForm.value.phone);
+          localStorage.setItem('hk_user_address', checkoutForm.value.address);
+          localStorage.setItem('hk_user_section', checkoutForm.value.section);
+        };
 
-        async function initFirebaseSystem() {
+        const loadUserDataFromMemory = () => {
+          checkoutForm.value.name = localStorage.getItem('hk_user_name') || '';
+          checkoutForm.value.phone = localStorage.getItem('hk_user_phone') || '';
+          checkoutForm.value.address = localStorage.getItem('hk_user_address') || '';
+          checkoutForm.value.section = localStorage.getItem('hk_user_section') || '';
+        };
+
+        // --- AUTHENTICATION FLOWS ---
+        onMounted(() => {
+          // Default Dark Luxury layout
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+
+          // Retrieve cached user data for UX efficiency
+          loadUserDataFromMemory();
+
+          // Trigger Secure Authentication FIRST
+          const initAuth = async () => {
             try {
-                const firebaseConfig = {
-                    apiKey: "AIzaSyBu8NOziGpCBhQEYFLOIkNLl0YqXYNFmSs",
-                    authDomain: "qrmakeup-c298b.firebaseapp.com",
-                    projectId: "qrmakeup-c298b",
-                    storageBucket: "qrmakeup-c298b.firebasestorage.app",
-                    messagingSenderId: "550156184090",
-                    appId: "1:550156184090:web:9b80a4599c36f90e45bfa3",
-                    measurementId: "G-RMH6N9NXPD"
-                };
-
-                app = firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                db = firebase.firestore();
-
-                // Dengar perubahan status log masuk secara terus (Instant UI Sync)
-                auth.onAuthStateChanged((user) => {
-                    currentUser = user;
-                    updateUserBadgeUI();
-                    
-                    if (user && !user.isAnonymous) {
-                        isAdmin = user.email && user.email.toLowerCase().includes('admin');
-                        
-                        const badgeDot = document.getElementById('user-badge-dot');
-                        if (isAdmin) {
-                            badgeDot.className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
-                            document.getElementById('admin-dashboard').classList.remove('hidden');
-                            document.getElementById('user-backup-info').classList.add('hidden');
-                            setupAdminListener();
-                        } else {
-                            badgeDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-                            document.getElementById('admin-dashboard').classList.add('hidden');
-                            document.getElementById('user-backup-info').classList.remove('hidden');
-                        }
-                    } else {
-                        isAdmin = false;
-                        document.getElementById('admin-dashboard').classList.add('hidden');
-                        document.getElementById('user-backup-info').classList.remove('hidden');
-                    }
-                    
-                    // Instant render output selepas status bertukar
-                    regenerateStyledQR();
-                });
-
-                // Sambung secara automatik (Anonymous) jika tiada sesi aktif
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await auth.signInWithCustomToken(__initial_auth_token);
-                    } else {
-                        // Elakkan ralat jika operasi Anonymous disekat pada console Firebase pengguna
-                        await auth.signInAnonymously();
-                    }
-                } catch (anonError) {
-                    console.warn("Sesi automasi disekat oleh konsol Firebase. Sila log masuk secara manual.");
-                }
-
-            } catch (error) {
-                console.error("Gagal memulakan Firebase:", error);
+              if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+              } else {
+                await signInAnonymously(auth);
+              }
+            } catch (err) {
+              console.error("Auth initialization error, signing in anonymously as fallback:", err);
+              try {
+                await signInAnonymously(auth);
+              } catch (anonErr) {
+                console.error("Anonymous authentication fallback failed:", anonErr);
+              }
             }
-        }
+          };
+          initAuth();
 
-        // Memantau penguploadan data global (Admin Listener)
-        let adminUnsubscribe = null;
-        function setupAdminListener() {
-            if (adminUnsubscribe) adminUnsubscribe();
-            if (!currentUser || !isAdmin) return;
+          // Monitor auth state change
+          onAuthStateChanged(auth, (user) => {
+            if (user && !user.isAnonymous) {
+              adminUser.value = user;
+              adminForm.value = { email: '', password: '' };
+            } else {
+              adminUser.value = null;
+            }
+          });
 
-            const collectionRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('generations');
-            
-            adminUnsubscribe = collectionRef.onSnapshot((snapshot) => {
-                const listContainer = document.getElementById('admin-data-list');
-                listContainer.innerHTML = '';
+          // Begin rotating backdrop slider
+          startHeroTimer();
+        });
 
-                if (snapshot.empty) {
-                    listContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Tiada pangkalan data ditemui.</p>`;
-                    return;
-                }
+        // --- FIRESTORE PERSISTENT REAL-TIME LISTENERS ---
+        watch(adminUser, (user) => {
+          const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'store');
+          
+          const unsubscribeSettings = onSnapshot(settingsDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const incomingData = docSnap.data();
+              if (!incomingData.heroImages || !Array.isArray(incomingData.heroImages) || incomingData.heroImages.length === 0) {
+                incomingData.heroImages = [
+                  'https://firebasestorage.googleapis.com/v0/b/iodigital-eb34a.firebasestorage.app/o/Hero%2F4F5528E0-AB51-4094-9380-50AFFCAAE15B.png?alt=media&token=a395f205-f24b-44c0-812b-d89beb2a1f1f'
+                ];
+              }
+              storeSettings.value = { ...storeSettings.value, ...incomingData };
+            } else {
+              setDoc(settingsDocRef, storeSettings.value).catch(err => {
+                console.error("Failed to seed initial store settings:", err);
+              });
+            }
+          }, (error) => {
+            console.error("Settings snapshot listener error:", error);
+          });
 
-                const sortedDocs = [];
-                snapshot.forEach(doc => {
-                    sortedDocs.push({ id: doc.id, ...doc.data() });
-                });
-                sortedDocs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          const menuColRef = collection(db, 'artifacts', appId, 'public', 'data', 'menu');
+          
+          const unsubscribeMenu = onSnapshot(menuColRef, (querySnap) => {
+            const items = [];
+            querySnap.forEach((doc) => {
+              items.push({ id: doc.id, ...doc.data() });
+            });
+            items.sort((a, b) => (a.rank || 0) - (b.rank || 0));
+            menuItems.value = items;
+            loading.value = false;
+          }, (error) => {
+            console.error("Menu snapshot listener error:", error);
+            loading.value = false;
+          });
 
-                sortedDocs.forEach(item => {
-                    const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Masa Tidak Diketahui';
-                    const recordEl = document.createElement('div');
-                    recordEl.className = "bg-slate-950/90 border border-slate-800/80 rounded-xl p-3 flex flex-col gap-2 relative group hover:border-pink-500/30 transition";
-                    recordEl.innerHTML = `
-                        <div class="flex items-center justify-between border-b border-slate-850 pb-2">
-                            <span class="text-[10px] font-mono text-pink-400 truncate max-w-[150px]">${item.userEmail || 'Anonymous'}</span>
-                            <span class="text-[9px] text-slate-500">${dateStr}</span>
-                        </div>
-                        <div class="flex items-center gap-2.5">
-                            <img src="${item.preview || 'https://via.placeholder.com/80?text=QR'}" class="w-12 h-12 rounded bg-white object-contain flex-shrink-0" alt="Preview" />
-                            <div class="text-[11px] truncate flex-1">
-                                <p class="text-slate-300 font-bold truncate">Data: ${item.qrData}</p>
-                                <p class="text-slate-400 mt-0.5">Label: ${item.labelTag || 'Tiada'}</p>
-                                <p class="text-[10px] text-indigo-400">Tema: ${item.themeName || 'Kustom'}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 mt-1">
-                            <button onclick="restoreRecordToEditor('${item.qrData}', '${item.themeName}', '${item.labelTag}')" class="flex-1 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 text-[10px] rounded font-bold transition">
-                                Muat ke Editor
-                            </button>
-                            <button onclick="deleteFirestoreRecord('${item.id}')" class="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition" title="Padam Rekod">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5 mx-auto"></i>
-                            </button>
-                        </div>
-                    `;
-                    listContainer.appendChild(recordEl);
-                });
-                lucide.createIcons();
+          let unsubscribeFeedback = () => {};
+          let unsubscribeSales = () => {};
+
+          if (user && !user.isAnonymous) {
+            const feedbackColRef = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
+            unsubscribeFeedback = onSnapshot(feedbackColRef, (querySnap) => {
+              const fbs = [];
+              querySnap.forEach((docSnap) => {
+                fbs.push({ id: docSnap.id, ...docSnap.data() });
+              });
+              fbs.sort((a, b) => b.createdAt - a.createdAt);
+              feedbacks.value = fbs;
             }, (error) => {
-                console.error("Admin snapshot error: ", error);
+              console.error("Feedback snapshot listener error:", error);
             });
-        }
 
-        function restoreRecordToEditor(qrData, themeName, labelTag) {
-            decodedQRData = qrData;
-            if (inputMode === 'text') {
-                document.getElementById('qr-text-input').value = qrData;
-            }
-            qrLabelTag.value = labelTag || '';
-            
-            const matchingKey = Object.keys(themes).find(k => themes[k].name === themeName);
-            if (matchingKey) {
-                applyTheme(matchingKey);
-            } else {
-                regenerateStyledQR();
-            }
-            closeAuthModal();
-            showToast("Rekod Dipulihkan", "Konfigurasi rekaan berjaya dimuatkan ke editor!");
-        }
-
-        async function deleteFirestoreRecord(docId) {
-            if (!currentUser || !isAdmin) return;
-            try {
-                await db.collection('artifacts').doc(appId)
-                        .collection('public').doc('data')
-                        .collection('generations').doc(docId).delete();
-                showToast("Rekod Dipadam", "Berjaya membuang fail dari pangkalan data awan!");
-            } catch (e) {
-                showToast("Gagal Padam", e.message);
-            }
-        }
-
-        // Auto-Save Rekaan ke Firestore
-        function triggerAutoSaveToFirestore() {
-            if (saveDebounceTimeout) clearTimeout(saveDebounceTimeout);
-            
-            saveDebounceTimeout = setTimeout(async () => {
-                if (!currentUser) return;
-
-                try {
-                    const tempPreview = canvas.toDataURL('image/jpeg', 0.4);
-
-                    const payload = {
-                        userId: currentUser.uid,
-                        userEmail: currentUser.email || 'Anonymous/Guest',
-                        qrData: inputMode === 'text' ? (document.getElementById('qr-text-input').value || 'https://google.com') : decodedQRData,
-                        themeName: document.getElementById('current-theme-badge').innerText.replace('Theme: ', ''),
-                        labelTag: qrLabelTag.value.trim(),
-                        dotsStyle: styleDots.value,
-                        eyeStyle: styleEye.value,
-                        ornament: styleOrnament.value,
-                        colorFgStart: colorFgStart.value,
-                        colorFgEnd: colorFgEnd.value,
-                        preview: tempPreview,
-                        timestamp: Date.now()
-                    };
-
-                    await db.collection('artifacts').doc(appId)
-                            .collection('public').doc('data')
-                            .collection('generations')
-                            .doc(currentUser.uid).set(payload, { merge: true });
-
-                    console.log("Konfigurasi disimpan secara automatik ke cloud.");
-                } catch (e) {
-                    console.warn("Firestore auto-save skipped: ", e);
-                }
-            }, 1500);
-        }
-
-        // --- AUTHENTICATION FLOW (INSTANT RE-RENDER) ---
-        function openAuthModal() {
-            document.getElementById('auth-modal').classList.remove('hidden');
-            if (currentUser && !currentUser.isAnonymous) {
-                document.getElementById('auth-logged-out-section').classList.add('hidden');
-                document.getElementById('auth-logged-in-section').classList.remove('hidden');
-                document.getElementById('profile-email-display').innerText = currentUser.email;
-            } else {
-                document.getElementById('auth-logged-out-section').classList.remove('hidden');
-                document.getElementById('auth-logged-in-section').classList.add('hidden');
-            }
-        }
-
-        function closeAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-        }
-
-        async function handleEmailSignUp() {
-            const email = document.getElementById('auth-email').value.trim();
-            const password = document.getElementById('auth-password').value;
-
-            if (!email || !password) {
-                showToast("Isi Maklumat", "Sila masukkan E-mel dan Kata Laluan.");
-                return;
-            }
-
-            try {
-                const userCred = await auth.createUserWithEmailAndPassword(email, password);
-                currentUser = userCred.user;
-                showToast("Akaun Dicipta", "Selamat datang ke QR Makeup!", "success");
-                closeAuthModal();
-                regenerateStyledQR(); // Instant rendering selepas mendaftar
-            } catch (error) {
-                showToast("Ralat Pendaftaran", error.message);
-            }
-        }
-
-        async function handleEmailLogin() {
-            const email = document.getElementById('auth-email').value.trim();
-            const password = document.getElementById('auth-password').value;
-
-            if (!email || !password) {
-                showToast("Isi Maklumat", "Sila masukkan E-mel dan Kata Laluan.");
-                return;
-            }
-
-            try {
-                const userCred = await auth.signInWithEmailAndPassword(email, password);
-                currentUser = userCred.user;
-                showToast("Log Masuk Berjaya", "Selamat kembali!", "success");
-                closeAuthModal();
-                regenerateStyledQR(); // Instant rendering selepas log masuk
-            } catch (error) {
-                showToast("Ralat Log Masuk", error.message);
-            }
-        }
-
-        async function handleLogout() {
-            try {
-                await auth.signOut();
-                currentUser = null;
-                isAdmin = false;
-                
-                try {
-                    await auth.signInAnonymously();
-                } catch(e) {}
-                
-                showToast("Log Keluar", "Kembali ke mod tetamu.");
-                closeAuthModal();
-                regenerateStyledQR(); // Instant rendering selepas log keluar
-            } catch (error) {
-                showToast("Ralat Log Keluar", error.message);
-            }
-        }
-
-        function updateUserBadgeUI() {
-            const badge = document.getElementById('user-badge');
-            const emailText = document.getElementById('user-badge-email');
-            
-            if (currentUser && !currentUser.isAnonymous) {
-                badge.classList.remove('hidden');
-                badge.classList.add('flex');
-                emailText.innerText = currentUser.email;
-            } else {
-                badge.classList.add('hidden');
-                badge.classList.remove('flex');
-            }
-        }
-
-        // --- CORE APPLICATION LOGIC ---
-        function switchInputMode(mode) {
-            inputMode = mode;
-            document.getElementById('btn-mode-upload').className = mode === 'upload' ? "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-pink-500/30 bg-pink-500/10 text-white text-sm" : "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 text-sm";
-            document.getElementById('btn-mode-text').className = mode === 'text' ? "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-pink-500/30 bg-pink-500/10 text-white text-sm" : "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 text-sm";
-            document.getElementById('container-upload').classList.toggle('hidden', mode !== 'upload');
-            document.getElementById('container-text').classList.toggle('hidden', mode !== 'text');
-            regenerateStyledQR();
-        }
-
-        function handleQRUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const temp = document.createElement('canvas');
-                    const tCtx = temp.getContext('2d');
-                    temp.width = img.width; temp.height = img.height;
-                    tCtx.drawImage(img, 0, 0);
-                    const code = jsQR(tCtx.getImageData(0,0,img.width,img.height).data, img.width, img.height);
-                    if (code) {
-                        decodedQRData = code.data;
-                        document.getElementById('decoded-info').classList.remove('hidden');
-                        document.getElementById('decoded-text-preview').innerText = code.data;
-                        regenerateStyledQR();
-                    }
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                centerLogoImg = new Image();
-                centerLogoImg.onload = () => {
-                    document.getElementById('logo-preview-container').classList.remove('hidden');
-                    document.getElementById('logo-preview').src = e.target.result;
-                    regenerateStyledQR();
-                };
-                centerLogoImg.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function handleBgUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            document.getElementById('bg-upload-name').innerText = file.name;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                customBgImg = new Image();
-                customBgImg.onload = () => {
-                    document.getElementById('btn-remove-bg').classList.remove('hidden');
-                    regenerateStyledQR();
-                };
-                customBgImg.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function removeCustomBg() {
-            customBgImg = null;
-            document.getElementById('bg-file-input').value = '';
-            document.getElementById('bg-upload-name').innerText = "Upload Custom QR Background";
-            document.getElementById('btn-remove-bg').classList.add('hidden');
-            regenerateStyledQR();
-        }
-
-        function removeLogo() {
-            centerLogoImg = null;
-            document.getElementById('logo-preview-container').classList.add('hidden');
-            document.getElementById('logo-file-input').value = '';
-            regenerateStyledQR();
-        }
-
-        function applyTheme(key) {
-            const theme = themes[key];
-            styleDots.value = theme.dotsStyle;
-            styleEye.value = theme.eyeStyle;
-            styleOrnament.value = theme.orn;
-            colorFgStart.value = theme.colorFgStart;
-            colorFgEnd.value = theme.colorFgEnd;
-            document.getElementById('current-theme-badge').innerText = `Theme: ${theme.name}`;
-            regenerateStyledQR();
-        }
-
-        function regenerateStyledQR() {
-            loader.style.opacity = '1';
-            
-            const data = inputMode === 'text' ? document.getElementById('qr-text-input').value : decodedQRData;
-            const qr = qrcode(0, 'Q'); qr.addData(data || " "); qr.make();
-            const mCount = qr.getModuleCount();
-            const size = canvas.width;
-            ctx.clearRect(0,0,size,size);
-
-            if (customBgImg) {
-                ctx.drawImage(customBgImg, 0, 0, size, size);
-            } else {
-                const grad = ctx.createLinearGradient(0,0,size,size);
-                grad.addColorStop(0, '#0f172a'); grad.addColorStop(1, '#1e293b');
-                ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
-            }
-
-            drawOrnaments(size);
-
-            const qSize = size * 0.65;
-            const off = (size - qSize) / 2;
-            const cSize = qSize / mCount;
-
-            const fg = ctx.createLinearGradient(off, off, off + qSize, off + qSize);
-            fg.addColorStop(0, colorFgStart.value); fg.addColorStop(1, colorFgEnd.value);
-
-            for (let r = 0; r < mCount; r++) {
-                for (let c = 0; c < mCount; c++) {
-                    if (qr.isDark(r, c)) {
-                        if ((r < 7 && c < 7) || (r < 7 && c >= mCount - 7) || (r >= mCount - 7 && c < 7)) continue;
-                        if (centerLogoImg) {
-                            const mid = Math.floor(mCount / 2);
-                            if (r >= mid - 4 && r <= mid + 4 && c >= mid - 4 && c <= mid + 4) continue;
-                        }
-                        ctx.fillStyle = fg;
-                        const x = off + c * cSize, y = off + r * cSize;
-                        ctx.beginPath();
-                        if (styleDots.value === 'circle') ctx.arc(x+cSize/2, y+cSize/2, cSize*0.4, 0, Math.PI*2);
-                        else if (styleDots.value === 'diamond') { ctx.moveTo(x+cSize/2, y); ctx.lineTo(x+cSize, y+cSize/2); ctx.lineTo(x+cSize/2, y+cSize); ctx.lineTo(x, y+cSize/2); }
-                        else if (styleDots.value === 'rounded-rect') drawRRect(ctx, x+cSize*0.1, y+cSize*0.1, cSize*0.8, cSize*0.8, cSize*0.3);
-                        else ctx.rect(x, y, cSize, cSize);
-                        ctx.fill();
-                    }
-                }
-            }
-            drawEyes(ctx, off, cSize, mCount);
-            
-            // Draw Center Logo
-            if (centerLogoImg) {
-                const lSize = qSize * 0.22;
-                ctx.fillStyle = "#fff"; drawRRect(ctx, (size-lSize)/2-5, (size-lSize)/2-5, lSize+10, lSize+10, 10);
-                ctx.drawImage(centerLogoImg, (size-lSize)/2, (size-lSize)/2, lSize, lSize);
-            }
-
-            // Draw Bottom Tag Label
-            const labelValue = qrLabelTag.value.trim();
-            if (labelValue) {
-                ctx.fillStyle = "#ffffff";
-                ctx.font = 'bold 30px "Plus Jakarta Sans"';
-                ctx.textAlign = "center";
-                ctx.letterSpacing = "2px";
-                ctx.fillText(labelValue.toUpperCase(), size / 2, size - 45);
-            }
-            
-            calculateSafety();
-            
-            // Simpan rekaan ke Firestore secara automatik
-            triggerAutoSaveToFirestore();
-
-            setTimeout(() => { loader.style.opacity = '0'; }, 50);
-        }
-
-        function drawRRect(c, x, y, w, h, r) {
-            c.beginPath(); c.moveTo(x+r, y); c.lineTo(x+w-r, y); c.quadraticCurveTo(x+w, y, x+w, y+r); c.lineTo(x+w, y+h-r); c.quadraticCurveTo(x+w, y+h, x+w-r, y+h); c.lineTo(x+r, y+h); c.quadraticCurveTo(x, y+h, x, y+h-r); c.lineTo(x, y+r); c.quadraticCurveTo(x, y, x+r, y); c.closePath();
-        }
-
-        function drawOrnaments(size) {
-            const orn = styleOrnament.value;
-            if (orn === 'none') return;
-            ctx.save();
-            ctx.fillStyle = "rgba(255,255,255,0.15)";
-            for (let i = 0; i < 40; i++) {
-                const x = Math.random()*size, y = Math.random()*size;
-                const s = Math.random()*15+5;
-                ctx.beginPath();
-                if (orn === 'particles') ctx.arc(x,y,s/2,0,Math.PI*2);
-                else if (orn === 'stars') { for(let j=0; j<5; j++) { ctx.lineTo(Math.cos((18+j*72)*Math.PI/180)*s+x, Math.sin((18+j*72)*Math.PI/180)*s+y); ctx.lineTo(Math.cos((54+j*72)*Math.PI/180)*(s/2)+x, Math.sin((54+j*72)*Math.PI/180)*(s/2)+y); } }
-                else if (orn === 'hearts') { ctx.moveTo(x, y+s/4); ctx.bezierCurveTo(x, y, x-s, y, x-s, y+s/2); ctx.bezierCurveTo(x-s, y+s, x, y+s*1.2, x, y+s*1.5); ctx.bezierCurveTo(x, y+s*1.2, x+s, y+s, x+s, y+s/2); ctx.bezierCurveTo(x+s, y, x, y, x, y+s/4); }
-                else if (orn === 'snowflakes') { for(let j=0; j<6; j++){ ctx.moveTo(x,y); ctx.lineTo(x+Math.cos(j*Math.PI/3)*s, y+Math.sin(j*Math.PI/3)*s); } ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.stroke(); continue; }
-                else if (orn === 'hexagons') { for(let j=0; j<6; j++) ctx.lineTo(x+s*Math.cos(j*Math.PI/3), y+s*Math.sin(j*Math.PI/3)); }
-                else if (orn === 'triangles') { for(let j=0; j<3; j++) ctx.lineTo(x+s*Math.cos(j*2*Math.PI/3), y+s*Math.sin(j*2*Math.PI/3)); }
-                else if (orn === 'plus') { ctx.rect(x-s/2, y-2, s, 4); ctx.rect(x-2, y-s/2, 4, s); }
-                else if (orn === 'dots') ctx.arc(x,y,2,0,Math.PI*2);
-                else if (orn === 'bubbles') { ctx.arc(x,y,s,0,Math.PI*2); ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.stroke(); continue;}
-                else if (orn === 'leaves') ctx.ellipse(x,y,s,s/2,Math.random(),0,Math.PI*2);
-                else if (orn === 'confetti') { ctx.rect(x,y,s,s/3); ctx.fillStyle=`hsla(${Math.random()*360},70%,70%,0.3)`; }
-                else if (orn === 'diamonds') { ctx.moveTo(x,y-s); ctx.lineTo(x+s,y); ctx.lineTo(x,y+s); ctx.lineTo(x-s,y); }
-                else if (orn === 'rings') { ctx.arc(x,y,s,0,Math.PI*2); ctx.arc(x,y,s-2,0,Math.PI*2); ctx.fill("evenodd"); continue; }
-                else if (orn === 'waves') { ctx.moveTo(x,y); ctx.bezierCurveTo(x+s, y-s, x+s*2, y+s, x+s*3, y); ctx.strokeStyle="rgba(255,255,255,0.1)"; ctx.stroke(); continue;}
-                ctx.fill();
-            }
-            ctx.restore();
-        }
-
-        function drawEyes(cCtx, off, cSize, mCount) {
-            const eSize = cSize * 7;
-            const poses = [{x:off, y:off}, {x:off+(mCount-7)*cSize, y:off}, {x:off, y:off+(mCount-7)*cSize}];
-            poses.forEach(p => {
-                cCtx.strokeStyle = colorFgStart.value; cCtx.lineWidth = cSize;
-                if(styleEye.value === 'circle') { cCtx.beginPath(); cCtx.arc(p.x+eSize/2, p.y+eSize/2, eSize/2-cSize/2, 0, Math.PI*2); cCtx.stroke(); }
-                else if(styleEye.value === 'rounded') { cCtx.beginPath(); drawRRect(cCtx, p.x+cSize/2, p.y+cSize/2, eSize-cSize, eSize-cSize, cSize*2); cCtx.stroke(); }
-                else cCtx.strokeRect(p.x+cSize/2, p.y+cSize/2, eSize-cSize, eSize-cSize);
-                
-                cCtx.fillStyle = colorFgEnd.value;
-                if(styleEye.value === 'circle') { cCtx.beginPath(); cCtx.arc(p.x+eSize/2, p.y+eSize/2, cSize*1.5, 0, Math.PI*2); cCtx.fill(); }
-                else if(styleEye.value === 'rounded') { cCtx.beginPath(); drawRRect(cCtx, p.x+cSize*2, p.y+cSize*2, cSize*3, cSize*3, cSize); cCtx.fill(); }
-                else cCtx.fillRect(p.x+cSize*2, p.y+cSize*2, cSize*3, cSize*3);
+            const salesColRef = collection(db, 'artifacts', appId, 'public', 'data', 'sales_logs');
+            unsubscribeSales = onSnapshot(salesColRef, (querySnap) => {
+              const logs = [];
+              querySnap.forEach((docSnap) => {
+                logs.push({ id: docSnap.id, ...docSnap.data() });
+              });
+              logs.sort((a, b) => b.timestamp - a.timestamp);
+              salesLogs.value = logs;
+            }, (error) => {
+              console.error("Sales Logs snapshot listener error:", error);
             });
-        }
-    </script>
+          } else {
+            // For general public, pull approved feedbacks to display as social proof testimonials
+            const feedbackColRef = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
+            unsubscribeFeedback = onSnapshot(feedbackColRef, (querySnap) => {
+              const fbs = [];
+              querySnap.forEach((docSnap) => {
+                fbs.push({ id: docSnap.id, ...docSnap.data() });
+              });
+              fbs.sort((a, b) => b.createdAt - a.createdAt);
+              // limit to latest 8 feedbacks for aesthetic performance
+              feedbacks.value = fbs.slice(0, 8);
+            });
+          }
+
+          return () => {
+            unsubscribeSettings();
+            unsubscribeMenu();
+            unsubscribeFeedback();
+            unsubscribeSales();
+            stopHeroTimer();
+          };
+        }, { immediate: true });
+
+        watch(menuItems, (newItems) => {
+          newItems.forEach(item => {
+            if (item.variants && item.variants.length > 0) {
+              const currentSelection = selectedVariants.value[item.id];
+              const matchedVariant = item.variants.find(v => v.name === currentSelection);
+              if (!currentSelection || (matchedVariant && matchedVariant.isSoldOut)) {
+                const firstAvailable = item.variants.find(v => !v.isSoldOut);
+                selectedVariants.value[item.id] = firstAvailable ? firstAvailable.name : item.variants[0].name;
+              }
+            }
+          });
+        }, { deep: true, immediate: true });
+
+
+        // --- COMPUTED BUSINESS OPERATIONAL STATUS LOGIC ---
+        const isStoreOpen = computed(() => {
+          if (storeSettings.value.manualOverride === 'CLOSED') return false;
+          if (storeSettings.value.manualOverride === 'OPEN' && !storeSettings.value.openHour && !storeSettings.value.closeHour) return true;
+
+          const now = new Date();
+          const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+          const klTime = new Date(utc + (3600000 * 8));
+
+          const currentDay = klTime.getDay();
+          const currentHour = klTime.getHours();
+
+          if (storeSettings.value.offDay !== "" && currentDay === parseInt(storeSettings.value.offDay)) {
+            if (storeSettings.value.manualOverride === 'OPEN') return true;
+            return false;
+          }
+
+          const openH = parseInt(storeSettings.value.openHour);
+          const closeH = parseInt(storeSettings.value.closeHour);
+
+          if (currentHour >= openH && currentHour < closeH) return true;
+          if (storeSettings.value.manualOverride === 'OPEN') return true;
+
+          return false;
+        });
+
+        // --- THEME SWAPPER ---
+        const toggleTheme = () => {
+          isDarkMode.value = !isDarkMode.value;
+          if (isDarkMode.value) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+          }
+        };
+
+        // --- VIEWS & NAVIGATION ---
+        const setView = (view) => {
+          isAdminMode.value = view === 'admin';
+        };
+
+        const toggleAdminView = () => {
+          isAdminMode.value = !isAdminMode.value;
+        };
+
+
+        // --- MENU INTERACTIVE & PRICING ---
+        const uniqueCategories = computed(() => {
+          const cats = new Set();
+          menuItems.value.forEach(item => {
+            if (!item.isHidden && item.category && item.category.trim() !== '') {
+              cats.add(item.category.trim());
+            }
+          });
+          return ['Semua', ...Array.from(cats)];
+        });
+
+        watch(uniqueCategories, (newCats) => {
+          if (!newCats.includes(selectedCategory.value)) {
+            selectedCategory.value = 'Semua';
+          }
+        });
+
+        const visibleMenuItems = computed(() => {
+          let items = menuItems.value.filter(item => !item.isHidden);
+          if (selectedCategory.value !== 'Semua') {
+            items = items.filter(item => item.category && item.category.trim() === selectedCategory.value);
+          }
+          return items;
+        });
+
+        const sortedMenuItems = computed(() => {
+          const available = visibleMenuItems.value.filter(item => !item.isSoldOut);
+          const soldOut = visibleMenuItems.value.filter(item => item.isSoldOut);
+          return [...available, ...soldOut];
+        });
+
+        const calculateDiscountedPrice = (price, discount) => {
+          const originalPrice = parseFloat(price) || 0;
+          const pct = parseFloat(discount) || 0;
+          if (pct <= 0) return originalPrice;
+          return originalPrice - (originalPrice * (pct / 100));
+        };
+
+        const getDisplayPrice = (item) => {
+          let basePrice = parseFloat(item.price) || 0;
+          const selectedVar = selectedVariants.value[item.id];
+          if (selectedVar && item.variants) {
+            const variantObj = item.variants.find(v => v.name === selectedVar);
+            if (variantObj) {
+              basePrice += parseFloat(variantObj.priceAdjustment) || 0;
+            }
+          }
+          return calculateDiscountedPrice(basePrice, item.discount);
+        };
+
+        const getSelectedVariantAdjustment = (item) => {
+          const selectedVar = selectedVariants.value[item.id];
+          if (selectedVar && item.variants) {
+            const variantObj = item.variants.find(v => v.name === selectedVar);
+            return variantObj ? parseFloat(variantObj.priceAdjustment) || 0 : 0;
+          }
+          return 0;
+        };
+
+        const isCurrentVariantSoldOut = (item) => {
+          if (!item.variants || item.variants.length === 0) return false;
+          const selectedVar = selectedVariants.value[item.id];
+          if (!selectedVar) return false;
+          const variantObj = item.variants.find(v => v.name === selectedVar);
+          return variantObj ? !!variantObj.isSoldOut : false;
+        };
+
+        const handleImageError = (e) => {
+          e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80';
+        };
+
+        const openLightbox = (url, title, desc) => {
+          activeLightbox.value = { url, title, desc };
+        };
+
+        const closeLightbox = () => {
+          activeLightbox.value = null;
+        };
+
+
+        // --- REACTIVE CART SYSTEM ---
+        const getCartItemCount = (itemId) => {
+          const selectedVar = selectedVariants.value[itemId] || '';
+          const cartItemId = selectedVar ? `${itemId}_${selectedVar}` : itemId;
+          const found = cart.value.find(c => c.id === cartItemId);
+          return found ? found.quantity : 0;
+        };
+
+        const incrementCart = (item) => {
+          if (!isStoreOpen.value) {
+            triggerNotification('Kedai sedang ditutup! Tempahan tidak dibenarkan.', 'error');
+            return;
+          }
+
+          if (isCurrentVariantSoldOut(item)) {
+            triggerNotification('Pilihan variasi ini telah habis dijual!', 'error');
+            return;
+          }
+
+          isPopping.value = item.id;
+          setTimeout(() => { isPopping.value = null; }, 200);
+
+          jiggleCart.value = true;
+          setTimeout(() => { jiggleCart.value = false; }, 400);
+
+          const selectedVar = selectedVariants.value[item.id] || '';
+          const cartItemId = selectedVar ? `${item.id}_${selectedVar}` : item.id;
+          const displayName = selectedVar ? `${item.name} (${selectedVar})` : item.name;
+          const priceAdj = (item.variants && selectedVar) ? (item.variants.find(v => v.name === selectedVar)?.priceAdjustment || 0) : 0;
+          const basePrice = parseFloat(item.price) + parseFloat(priceAdj);
+
+          const found = cart.value.find(c => c.id === cartItemId);
+          if (found) {
+            found.quantity++;
+          } else {
+            cart.value.push({
+              id: cartItemId,
+              originalId: item.id,
+              name: displayName,
+              price: basePrice,
+              discount: item.discount,
+              quantity: 1,
+              variant: selectedVar,
+              allowRemarks: item.allowRemarks || false,
+              remark: customerRemarks.value[item.id] || ''
+            });
+          }
+        };
+
+        const decrementCart = (item) => {
+          const selectedVar = selectedVariants.value[item.id] || '';
+          const cartItemId = selectedVar ? `${item.id}_${selectedVar}` : item.id;
+          const foundIndex = cart.value.findIndex(c => c.id === cartItemId);
+          if (foundIndex > -1) {
+            if (cart.value[foundIndex].quantity > 1) {
+              cart.value[foundIndex].quantity--;
+            } else {
+              cart.value.splice(foundIndex, 1);
+            }
+          }
+        };
+
+        const updateCartRemark = (itemId) => {
+          cart.value.forEach(c => {
+            if (c.originalId === itemId) {
+              c.remark = customerRemarks.value[itemId] || '';
+            }
+          });
+        };
+
+        const cartTotalItems = computed(() => {
+          return cart.value.reduce((total, item) => total + item.quantity, 0);
+        });
+
+        const cartSubtotal = computed(() => {
+          return cart.value.reduce((total, item) => {
+            const finalPrice = calculateDiscountedPrice(item.price, item.discount);
+            return total + (finalPrice * item.quantity);
+          }, 0);
+        });
+
+        const finalGrandTotal = computed(() => {
+          let total = cartSubtotal.value;
+          if (checkoutForm.value.deliveryMode === 'delivery') {
+            total += parseFloat(storeSettings.value.codCharge || 1.00);
+          }
+          return total;
+        });
+
+        const toggleCheckoutDrawer = (state) => {
+          if (state && !isStoreOpen.value) {
+            triggerNotification('Waktu operasi tamat. Dapur kami telah ditutup.', 'error');
+            return;
+          }
+          showCheckoutDrawer.value = state;
+        };
+
+
+        // --- FORM VALIDATION & REDIRECTION ---
+        const isCheckoutFormValid = computed(() => {
+          const f = checkoutForm.value;
+          if (!f.name || !f.phone || !f.paymentMode) return false;
+          if (f.deliveryMode === 'delivery') {
+            return f.address.trim() !== '' && f.section !== '';
+          }
+          return true;
+        });
+
+        const submitOrderToWhatsApp = () => {
+          // Store user's credentials to Local Storage for future visits
+          saveUserDataToMemory();
+
+          const logsCol = collection(db, 'artifacts', appId, 'public', 'data', 'sales_logs');
+          addDoc(logsCol, {
+            amount: finalGrandTotal.value,
+            itemsCount: cartTotalItems.value,
+            timestamp: Date.now()
+          }).catch(err => console.error("Failed to write to sales_logs analytics:", err));
+
+          let messageText = `*🔔 Assalamualaikum dan Hai*\n`;
+          messageText += `Boleh sahkan pesanan saya\n\n`;
+          messageText += `*🍛 Pesanan*\n`;
+          cart.value.forEach((item, idx) => {
+            const discPrice = calculateDiscountedPrice(item.price, item.discount);
+            let itemLine = `${idx+1}. ${item.name} (x${item.quantity}) - RM ${(discPrice * item.quantity).toFixed(2)}`;
+            if (item.allowRemarks && item.remark && item.remark.trim() !== '') {
+              itemLine += `\n   ✍️ _Catatan: ${item.remark.trim()}_`;
+            }
+            messageText += `${itemLine}\n`;
+          });
+          messageText += `\n`;
+
+          messageText += `*👤 MAKLUMAT PENERIMA*\n`;
+          messageText += `Nama: ${checkoutForm.value.name}\n`;
+          messageText += `No. Tel: ${checkoutForm.value.phone}\n`;
+          messageText += `Penerimaan: ${checkoutForm.value.deliveryMode === 'delivery' ? 'Penghantaran (COD)' : 'Ambil Sendiri (Pick-up)'}\n`;
+          
+          if (checkoutForm.value.deliveryMode === 'delivery') {
+            messageText += `Fasa: ${checkoutForm.value.section}\n`;
+            messageText += `Alamat: ${checkoutForm.value.address}\n`;
+          } else {
+            messageText += `📍 Fasa 1, 3A, Lorong Lagenda 19.\n`;
+          }
+          
+          messageText += `Pembayaran: ${checkoutForm.value.paymentMode}\n\n`;
+
+          messageText += `*💵 RINGKASAN JUMLAH*\n`;
+          if (checkoutForm.value.deliveryMode === 'delivery') {
+            messageText += `Caj Penghantaran: RM ${parseFloat(storeSettings.value.codCharge || 1.00).toFixed(2)}\n`;
+          }
+          messageText += `*JUMLAH KESELURUHAN: RM ${finalGrandTotal.value.toFixed(2)}*\n\n`;
+
+          const merchantNumber = '601160653940';
+          const encodedText = encodeURIComponent(messageText);
+          const whatsappUrl = `https://wa.me/${merchantNumber}?text=${encodedText}`;
+
+          cart.value = [];
+          customerRemarks.value = {};
+          showCheckoutDrawer.value = false;
+          // Retain name and phone to avoid clearing from memory
+          const cachedName = checkoutForm.value.name;
+          const cachedPhone = checkoutForm.value.phone;
+          checkoutForm.value = { name: cachedName, phone: cachedPhone, deliveryMode: 'delivery', address: '', section: '', paymentMode: '' };
+          triggerNotification('Mengarahkan anda ke WhatsApp...');
+
+          window.location.href = whatsappUrl;
+        };
+
+        const contactWhatsAppDirect = () => {
+          const merchantNumber = '601160653940';
+          const messageText = `Assalamualaikum dan Hai, saya bercadang untuk membuat tempahan`;
+          const encodedText = encodeURIComponent(messageText);
+          const whatsappUrl = `https://wa.me/${merchantNumber}?text=${encodedText}`;
+          window.location.href = whatsappUrl;
+        };
+
+        // --- ADMINISTRATIVE SEGMENTS ---
+        const loginAdmin = async () => {
+          adminLoggingIn.value = true;
+          authError.value = '';
+          try {
+            await signInWithEmailAndPassword(auth, adminForm.value.email, adminForm.value.password);
+            triggerNotification('Berjaya log masuk sebagai Pentadbir!');
+          } catch (err) {
+            console.error("Auth login failure:", err);
+            authError.value = 'E-mel atau kata laluan salah. Sila cuba lagi.';
+          } finally {
+            adminLoggingIn.value = false;
+          }
+        };
+
+        const logoutAdmin = async () => {
+          try {
+            await signOut(auth);
+            await signInAnonymously(auth);
+            adminSubTab.value = 'settings';
+            triggerNotification('Anda telah log keluar dari portal.');
+          } catch (err) {
+            console.error("Logout failure:", err);
+          }
+        };
+
+        const saveStoreSettings = async () => {
+          settingsSaving.value = true;
+          try {
+            const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'store');
+            await setDoc(settingsDocRef, {
+              openHour: parseInt(storeSettings.value.openHour),
+              closeHour: parseInt(storeSettings.value.closeHour),
+              offDay: storeSettings.value.offDay === "" ? "" : parseInt(storeSettings.value.offDay),
+              manualOverride: storeSettings.value.manualOverride,
+              codCharge: parseFloat(storeSettings.value.codCharge || 1.00),
+              heroImages: storeSettings.value.heroImages.filter(url => url && url.trim() !== '')
+            });
+          } catch (err) {
+            console.error("Settings update failed:", err);
+            triggerNotification('Gagal mengemaskini tetapan kedai!', 'error');
+          } finally {
+            settingsSaving.value = false;
+          }
+        };
+
+        const toggleEmergencyOverride = () => {
+          storeSettings.value.manualOverride = storeSettings.value.manualOverride === 'OPEN' ? 'CLOSED' : 'OPEN';
+          saveStoreSettings();
+        };
+
+        const addHeroImageRow = () => {
+          if (!storeSettings.value.heroImages) {
+            storeSettings.value.heroImages = [];
+          }
+          storeSettings.value.heroImages.push('');
+        };
+
+        const removeHeroImageRow = (index) => {
+          storeSettings.value.heroImages.splice(index, 1);
+          if (storeSettings.value.heroImages.length === 0) {
+            storeSettings.value.heroImages = [
+              'https://firebasestorage.googleapis.com/v0/b/iodigital-eb34a.firebasestorage.app/o/Hero%2F4F5528E0-AB51-4094-9380-50AFFCAAE15B.png?alt=media&token=a395f205-f24b-44c0-812b-d89beb2a1f1f'
+            ];
+          }
+          saveStoreSettings();
+        };
+
+
+        // --- ADMIN MENU CRUD ---
+        const openMenuFormModal = (item) => {
+          if (item) {
+            editingItem.value = item;
+            menuForm.value = {
+              name: item.name,
+              category: item.category || '',
+              description: item.description || '',
+              price: item.price,
+              discount: item.discount || 0,
+              image: item.image,
+              isSoldOut: item.isSoldOut || false,
+              isHidden: item.isHidden || false,
+              allowRemarks: item.allowRemarks || false,
+              isBestSeller: item.isBestSeller || false,
+              isRecommended: item.isRecommended || false,
+              rank: item.rank || 0,
+              variants: item.variants ? JSON.parse(JSON.stringify(item.variants)) : []
+            };
+          } else {
+            editingItem.value = null;
+            menuForm.value = {
+              name: '',
+              category: '',
+              description: '',
+              price: 0,
+              discount: 0,
+              image: '',
+              isSoldOut: false,
+              isHidden: false,
+              allowRemarks: false,
+              isBestSeller: false,
+              isRecommended: false,
+              rank: menuItems.value.length ? Math.max(...menuItems.value.map(i => i.rank || 0)) + 1 : 1,
+              variants: []
+            };
+          }
+          showMenuFormModal.value = true;
+        };
+
+        const closeMenuFormModal = () => {
+          showMenuFormModal.value = false;
+          editingItem.value = null;
+        };
+
+        const generateImageForMenu = async () => {
+          if (!menuForm.value.name) {
+            triggerNotification('Sila tulis nama hidangan dahulu sebelum menjana imej.', 'error');
+            return;
+          }
+          imageGenerating.value = true;
+          try {
+            const apiKey = "";
+            const fallbackPrompt = `Realistic high quality food photography of traditional Malaysian ${menuForm.value.name}, centered close-up shot, appetizing presentation, blurred background`;
+            
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                instances: { prompt: fallbackPrompt },
+                parameters: { sampleCount: 1 }
+              })
+            });
+
+            if (!response.ok) throw new Error('API request failed');
+            const data = await response.json();
+            
+            if (data.predictions && data.predictions[0]?.bytesBase64Encoded) {
+              menuForm.value.image = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+              triggerNotification('Imej berjaya dijana oleh Google Imagen!');
+            } else {
+              throw new Error('Invalid format returned from model');
+            }
+          } catch (err) {
+            console.error("Image generation failure, executing random Unsplash search backup:", err);
+            menuForm.value.image = `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80`;
+            triggerNotification('Penjana AI sibuk, menggunakan imej standard.', 'error');
+          } finally {
+            imageGenerating.value = false;
+          }
+        };
+
+        const saveMenuItem = async () => {
+          menuItemSaving.value = true;
+          try {
+            const menuColRef = collection(db, 'artifacts', appId, 'public', 'data', 'menu');
+            
+            const itemPayload = {
+              name: menuForm.value.name,
+              category: menuForm.value.category ? menuForm.value.category.trim() : 'Lain-lain',
+              description: menuForm.value.description,
+              price: parseFloat(menuForm.value.price) || 0,
+              discount: parseInt(menuForm.value.discount) || 0,
+              image: menuForm.value.image,
+              isSoldOut: menuForm.value.isSoldOut,
+              isHidden: menuForm.value.isHidden,
+              allowRemarks: menuForm.value.allowRemarks || false,
+              isBestSeller: menuForm.value.isBestSeller || false,
+              isRecommended: menuForm.value.isRecommended || false,
+              rank: parseInt(menuForm.value.rank) || 0,
+              variants: menuForm.value.variants ? JSON.parse(JSON.stringify(menuForm.value.variants)) : []
+            };
+
+            if (editingItem.value) {
+              const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'menu', editingItem.value.id);
+              await updateDoc(itemDocRef, itemPayload);
+              triggerNotification('Item menu berjaya dikemaskini!');
+            } else {
+              await addDoc(menuColRef, itemPayload);
+              triggerNotification('Item menu baru berjaya didaftarkan!');
+            }
+            closeMenuFormModal();
+          } catch (err) {
+            console.error("Failed to save menu item:", err);
+            triggerNotification('Gagal menyimpan menu hidangan.', 'error');
+          } finally {
+            menuItemSaving.value = false;
+          }
+        };
+
+        const toggleSoldStatus = async (item) => {
+          try {
+            const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'menu', item.id);
+            await updateDoc(itemDocRef, { isSoldOut: !item.isSoldOut });
+            triggerNotification(`Status ${item.name} ditukar kepada ${!item.isSoldOut ? 'HABIS STOK' : 'TERSEDIA'}`);
+          } catch (err) {
+            console.error("Failed status updates:", err);
+          }
+        };
+
+        const toggleItemVisibility = async (item) => {
+          try {
+            const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'menu', item.id);
+            await updateDoc(itemDocRef, { isHidden: !item.isHidden });
+            triggerNotification(`${item.name} kini ${!item.isHidden ? 'DISEMBUNYI' : 'DISEBARKAN'}`);
+          } catch (err) {
+            console.error("Visibility change failure:", err);
+          }
+        };
+
+        const deleteItemConfirm = (item) => {
+          deleteConfirmTarget.value = item;
+        };
+
+        const executeDeleteItem = async () => {
+          if (!deleteConfirmTarget.value) return;
+          try {
+            const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'menu', deleteConfirmTarget.value.id);
+            await deleteDoc(itemDocRef);
+            triggerNotification('Item menu berjaya didelete!');
+          } catch (err) {
+            console.error("Item deletion error:", err);
+            triggerNotification('Padam gagal dilakukan.', 'error');
+          } finally {
+            deleteConfirmTarget.value = null;
+          }
+        };
+
+        const changeItemRank = async (index, direction) => {
+          const targetIndex = direction === 'up' ? index - 1 : index + 1;
+          if (targetIndex < 0 || targetIndex >= menuItems.value.length) return;
+
+          const itemA = menuItems.value[index];
+          const itemB = menuItems.value[targetIndex];
+
+          const rankA = itemA.rank || 0;
+          const rankB = itemB.rank || 0;
+
+          try {
+            const docRefA = doc(db, 'artifacts', appId, 'public', 'data', 'menu', itemA.id);
+            const docRefB = doc(db, 'artifacts', appId, 'public', 'data', 'menu', itemB.id);
+
+            await updateDoc(docRefA, { rank: rankB });
+            await updateDoc(docRefB, { rank: rankA });
+          } catch (err) {
+            console.error("Error shifting menu order ranks:", err);
+          }
+        };
+
+        const addVariantRow = () => {
+          if (!menuForm.value.variants) {
+            menuForm.value.variants = [];
+          }
+          menuForm.value.variants.push({ name: '', priceAdjustment: 0, isSoldOut: false });
+        };
+
+        const removeVariantRow = (index) => {
+          menuForm.value.variants.splice(index, 1);
+        };
+
+        // --- FEEDBACK SEGMENTS ---
+        const openFeedbackModal = () => {
+          feedbackComment.value = '';
+          showFeedbackModal.value = true;
+        };
+
+        const closeFeedbackModal = () => {
+          showFeedbackModal.value = false;
+        };
+
+        const submitFeedback = async () => {
+          if (!feedbackComment.value.trim()) return;
+          feedbackSaving.value = true;
+          try {
+            const feedbackColRef = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
+            await addDoc(feedbackColRef, {
+              comment: feedbackComment.value.trim(),
+              createdAt: Date.now(),
+              isRead: false
+            });
+            triggerNotification('Terima kasih! Maklum balas anda telah disimpan.');
+            closeFeedbackModal();
+          } catch (err) {
+            console.error("Feedback submit error:", err);
+            triggerNotification('Gagal menghantar maklum balas.', 'error');
+          } finally {
+            feedbackSaving.value = false;
+          }
+        };
+
+        const openAdminFeedbackModal = () => {
+          showAdminFeedbackModal.value = true;
+        };
+
+        const markFeedbackAsRead = async (fb) => {
+          if (fb.isRead) return;
+          try {
+            const fbDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'feedbacks', fb.id);
+            await updateDoc(fbDocRef, { isRead: true });
+          } catch (err) {
+            console.error("Failed to mark as read:", err);
+          }
+        };
+
+        const deleteFeedback = async (fbId) => {
+          try {
+            const fbDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'feedbacks', fbId);
+            await deleteDoc(fbDocRef);
+            triggerNotification('Maklum balas berjaya dipadam!');
+          } catch (err) {
+            console.error("Failed to delete feedback:", err);
+            triggerNotification('Gagal memadam maklum balas.', 'error');
+          }
+        };
+
+        const formatTimestamp = (ts) => {
+          if (!ts) return '';
+          const date = new Date(ts);
+          const months = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogos', 'Sep', 'Okt', 'Nov', 'Dis'];
+          const day = date.getDate();
+          const month = months[date.getMonth()];
+          const year = date.getFullYear();
+          let hours = date.getHours();
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12;
+          hours = hours ? hours : 12;
+          return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+        };
+
+        const unreadFeedbackCount = computed(() => {
+          return feedbacks.value.filter(fb => !fb.isRead).length;
+        });
+
+        const formatHour = (hour) => {
+          if (hour === undefined) return '';
+          const h = parseInt(hour);
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const displayH = h % 12 === 0 ? 12 : h % 12;
+          return `${displayH} ${ampm}`;
+        };
+
+        const formatDay = (dayIndex) => {
+          const days = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+          return days[dayIndex] || '';
+        };
+
+        // --- SALES LOGS ACTIONS ---
+        const clearSalesLogs = async () => {
+          if (!confirm('Adakah anda pasti untuk memadam semua log jualan?')) return;
+          try {
+            for (const log of salesLogs.value) {
+              const logDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'sales_logs', log.id);
+              await deleteDoc(logDocRef);
+            }
+            triggerNotification('Semua log jualan telah berjaya dipadam.');
+          } catch (err) {
+            console.error("Error clearing sales logs:", err);
+            triggerNotification('Gagal memadam log jualan.', 'error');
+          }
+        };
+
+        return {
+          loading,
+          isDarkMode,
+          isAdminMode,
+          adminSubTab,
+          adminUser,
+          viewMode,
+          notification,
+          triggerNotification,
+          activeLightbox,
+          isPopping,
+          jiggleCart,
+          currentHeroIndex,
+          resetHeroTimer,
+          storeSettings,
+          settingsSaving,
+          menuItems,
+          selectedVariants,
+          customerRemarks,
+          selectedCategory,
+          uniqueCategories,
+          cart,
+          showCheckoutDrawer,
+          checkoutForm,
+          adminForm,
+          adminLoggingIn,
+          authError,
+          showMenuFormModal,
+          editingItem,
+          imageGenerating,
+          menuItemSaving,
+          deleteConfirmTarget,
+          menuForm,
+          isStoreOpen,
+          visibleMenuItems,
+          sortedMenuItems,
+          showFeedbackModal,
+          feedbackComment,
+          feedbackSaving,
+          feedbacks,
+          showAdminFeedbackModal,
+          unreadFeedbackCount,
+          toggleTheme,
+          setView,
+          toggleAdminView,
+          calculateDiscountedPrice,
+          getDisplayPrice,
+          getSelectedVariantAdjustment,
+          isCurrentVariantSoldOut,
+          handleImageError,
+          openLightbox,
+          closeLightbox,
+          getCartItemCount,
+          incrementCart,
+          decrementCart,
+          updateCartRemark,
+          cartTotalItems,
+          cartSubtotal,
+          finalGrandTotal,
+          toggleCheckoutDrawer,
+          isCheckoutFormValid,
+          submitOrderToWhatsApp,
+          contactWhatsAppDirect,
+          loginAdmin,
+          logoutAdmin,
+          saveStoreSettings,
+          toggleEmergencyOverride,
+          addHeroImageRow,
+          removeHeroImageRow,
+          openMenuFormModal,
+          closeMenuFormModal,
+          generateImageForMenu,
+          saveMenuItem,
+          toggleSoldStatus,
+          toggleItemVisibility,
+          deleteItemConfirm,
+          executeDeleteItem,
+          changeItemRank,
+          addVariantRow,
+          removeVariantRow,
+          openFeedbackModal,
+          closeFeedbackModal,
+          submitFeedback,
+          openAdminFeedbackModal,
+          markFeedbackAsRead,
+          deleteFeedback,
+          formatTimestamp,
+          formatHour,
+          formatDay,
+          
+          activeFaqIndex,
+          faqs,
+          toggleFaq,
+          salesLogs,
+          todaySalesStats,
+          clearSalesLogs
+        };
+      }
+    }).mount('#app');
+  </script>
 </body>
 </html>
